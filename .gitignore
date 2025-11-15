@@ -1,0 +1,8 @@
+# ignore everything
+*
+
+# keep .gitignore itself, package.json and the src folder (and its contents)
+!.gitignore
+!/package.json
+!/src/
+!/src/**
