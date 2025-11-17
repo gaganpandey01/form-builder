@@ -24,6 +24,8 @@ import {
   Check,
   X,
   Layout,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import type {
   Form,
@@ -39,6 +41,7 @@ import { FormSettings } from "./FormSettings";
 import { FieldTemplates } from "./FieldTemplates";
 import { SaveTemplateModal } from "./SaveTemplateModal";
 
+import { DatePurposeSelector as DatePurposeModal } from "../DatePurposeSelector";
 interface AdminPanelProps {
   form: Form;
   setForm: (form: Form) => void;
@@ -51,12 +54,14 @@ function SortableFieldItem({
   index,
   updateField,
   deleteField,
+  duplicateField,
   allFields,
 }: {
   field: FormField;
   index: number;
   updateField: (id: string, updates: Partial<FormField>) => void;
   deleteField: (id: string) => void;
+  duplicateField: (id: string) => void;
   allFields: FormField[];
 }) {
   const {
@@ -74,7 +79,6 @@ function SortableFieldItem({
     zIndex: isDragging ? 999 : undefined,
   };
 
-  // dragHandleProps contains attributes & listeners to spread on the drag handle inside FieldEditor
   const dragHandleProps = { ...attributes, ...listeners };
 
   return (
@@ -87,13 +91,114 @@ function SortableFieldItem({
         allFields={allFields}
         isDragging={isDragging}
         dragHandleProps={dragHandleProps}
-        duplicateField={function (id: string): void {
-          throw new Error("Function not implemented.");
-        }}
+        duplicateField={duplicateField}
       />
     </div>
   );
 }
+
+// Date Purpose Selector Modal Component
+// function DatePurposeModal({
+//   isOpen,
+//   onClose,
+//   onSelect,
+// }: {
+//   isOpen: boolean;
+//   onClose: () => void;
+//   onSelect: (purpose: string, category: string) => void;
+// }) {
+//   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
+//     new Set()
+//   );
+
+//   if (!isOpen) return null;
+
+//   const toggleCategory = (category: string) => {
+//     setExpandedCategories((prev) => {
+//       const newSet = new Set(prev);
+//       if (newSet.has(category)) {
+//         newSet.delete(category);
+//       } else {
+//         newSet.add(category);
+//       }
+//       return newSet;
+//     });
+//   };
+
+//   return (
+//     <>
+//       {/* Backdrop */}
+//       <div
+//         className="fixed inset-0 bg-black/50 z-[998] animate-in fade-in duration-200"
+//         onClick={onClose}
+//         aria-hidden="true"
+//       />
+
+//       {/* Modal */}
+//       <div
+//         className="fixed left-0 right-0 bottom-0 md:left-1/2 md:right-auto md:bottom-auto md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 bg-white rounded-t-2xl md:rounded-xl max-h-[80vh] md:max-h-[600px] md:w-[90%] md:max-w-[500px] lg:max-w-[600px] flex flex-col z-[999] shadow-2xl"
+//         role="dialog"
+//         aria-modal="true"
+//       >
+//         {/* Header */}
+//         <div className="flex justify-between items-center px-5 py-4 md:px-6 md:py-5 border-b border-gray-200 flex-shrink-0">
+//           <h2 className="text-lg md:text-xl font-semibold text-gray-900">
+//             Select Date Purpose
+//           </h2>
+//           <button
+//             onClick={onClose}
+//             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+//           >
+//             <X size={20} />
+//           </button>
+//         </div>
+
+//         {/* Content */}
+//         <div className="overflow-y-auto flex-1 py-3">
+//           {datePurposesData.datePurposes.map((categoryGroup) => (
+//             <div
+//               key={categoryGroup.category}
+//               className="border-b border-gray-100 last:border-b-0"
+//             >
+//               {/* Category Header */}
+//               <button
+//                 className="w-full flex justify-between items-center px-5 py-4 bg-gray-50 hover:bg-gray-100 active:bg-gray-200 transition-colors text-left"
+//                 onClick={() => toggleCategory(categoryGroup.category)}
+//               >
+//                 <span className="text-base font-semibold text-gray-700">
+//                   {categoryGroup.category}
+//                 </span>
+//                 {expandedCategories.has(categoryGroup.category) ? (
+//                   <ChevronUp size={20} />
+//                 ) : (
+//                   <ChevronDown size={20} />
+//                 )}
+//               </button>
+
+//               {/* Purpose List */}
+//               {expandedCategories.has(categoryGroup.category) && (
+//                 <div className="bg-white">
+//                   {categoryGroup.purposes.map((purpose) => (
+//                     <button
+//                       key={purpose}
+//                       className="w-full px-5 py-3.5 pl-10 text-left text-[15px] text-gray-600 hover:bg-gray-50 active:bg-gray-100 transition-colors min-h-[44px]"
+//                       onClick={() => {
+//                         onSelect(purpose, categoryGroup.category);
+//                         onClose();
+//                       }}
+//                     >
+//                       {purpose}
+//                     </button>
+//                   ))}
+//                 </div>
+//               )}
+//             </div>
+//           ))}
+//         </div>
+//       </div>
+//     </>
+//   );
+// }
 
 export function AdminPanel({
   form,
@@ -106,6 +211,7 @@ export function AdminPanel({
   const [showTemplates, setShowTemplates] = useState(false);
   const [showSaveTemplate, setShowSaveTemplate] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [showDatePurposeModal, setShowDatePurposeModal] = useState(false);
 
   const formUrl = `${window.location.origin}?formId=${form.id}`;
 
@@ -125,6 +231,12 @@ export function AdminPanel({
   ];
 
   const addField = (type: FormField["type"]) => {
+    // Show date purpose modal when adding date field
+    if (type === "date") {
+      setShowDatePurposeModal(true);
+      return;
+    }
+
     const smartDefaults = getSmartDefaults(type);
     const newField: FormField = {
       id: generateId(),
@@ -140,6 +252,27 @@ export function AdminPanel({
       autofill: smartDefaults.autofill,
     };
     setForm({ ...form, fields: [...form.fields, newField] });
+    toast.success(`${type} field added!`);
+  };
+
+  const handleDatePurposeSelect = (purpose: string, category: string, time:string) => {
+    const smartDefaults = getSmartDefaults("date");
+    const newField: FormField = {
+      id: generateId(),
+      type: "date",
+      label: purpose, // Use the selected purpose as the label
+      required: false,
+      placeholder: "",
+      autofill: smartDefaults.autofill,
+      // Store the category and purpose for reference
+      metadata: {
+        datePurpose: purpose,
+        dateCategory: category,
+        dateTime:time
+      },
+    };
+    setForm({ ...form, fields: [...form.fields, newField] });
+    toast.success(`Date field "${purpose}" added!`);
   };
 
   const addTemplate = (template: FieldTemplate | CustomTemplate) => {
@@ -324,6 +457,7 @@ export function AdminPanel({
                 index={index}
                 updateField={updateField}
                 deleteField={deleteField}
+                duplicateField={duplicateField}
                 allFields={form.fields}
               />
             ))}
@@ -384,6 +518,13 @@ export function AdminPanel({
           }}
         />
       )}
+
+      {/* Date Purpose Selection Modal */}
+      <DatePurposeModal
+        isOpen={showDatePurposeModal}
+        onClose={() => setShowDatePurposeModal(false)}
+        onSelect={handleDatePurposeSelect}
+      />
     </div>
   );
 }

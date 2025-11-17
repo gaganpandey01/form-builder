@@ -25,7 +25,7 @@ export function FormView({ form, responses, setResponses }: FormViewProps) {
 
   // Get visible fields based on conditional logic
   const visibleFields = getVisibleFields(form.fields, formData);
-  // console.log("visible", form)
+  console.log("visible", form)
   // Calculate steps for multi-step forms
   const stepsPerPage = form.settings.stepsPerPage || 5;
   const totalSteps = form.settings.isMultiStep

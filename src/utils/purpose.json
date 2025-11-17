@@ -1,0 +1,139 @@
+{
+  "datePurposes": [
+    {
+      "category": "Personal Information",
+      "time": "past",
+      "purposes": [
+        {
+          "label": "Date of Birth"
+        },
+        {
+          "label": "Anniversary Date"
+        },
+        {
+          "label": "Date of Joining"
+        },
+        {
+          "label": "Marriage Date"
+        }
+      ]
+    },
+    {
+      "category": "Scheduling and Appointments",
+      "time": "future",
+      "purposes": [
+        {
+          "label": "Appointment Date"
+        },
+        {
+          "label": "Interview Date"
+        },
+        {
+          "label": "Consultation Date"
+        },
+        {
+          "label": "Follow-up Date"
+        }
+      ]
+    },
+    {
+      "category": "Event Management",
+      "time": "future",
+      "purposes": [
+        {
+          "label": "Event Start Date"
+        },
+        {
+          "label": "Event End Date"
+        },
+        {
+          "label": "Registration Deadline"
+        }
+      ]
+    },
+    {
+      "category": "Medical and Healthcare",
+      "time": "mixed",
+      "purposes": [
+        {
+          "label": "Medical Appointment Date"
+        },
+        {
+          "label": "Vaccination Date"
+        },
+        {
+          "label": "Last Check-up Date"
+        }
+      ]
+    },
+    {
+      "category": "Education",
+      "time": "mixed",
+      "purposes": [
+        {
+          "label": "Enrollment Date"
+        },
+        {
+          "label": "Graduation Date"
+        },
+        {
+          "label": "Course Start Date"
+        },
+        {
+          "label": "Course End Date"
+        }
+      ]
+    },
+    {
+      "category": "Employment",
+      "time": "mixed",
+      "purposes": [
+        {
+          "label": "Employment Start Date"
+        },
+        {
+          "label": "Employment End Date"
+        },
+        {
+          "label": "Leave Start Date"
+        },
+        {
+          "label": "Leave End Date"
+        }
+      ]
+    },
+    {
+      "category": "Financial",
+      "time": "mixed",
+      "purposes": [
+        {
+          "label": "Payment Due Date"
+        },
+        {
+          "label": "Transaction Date"
+        },
+        {
+          "label": "Policy Renewal Date"
+        }
+      ]
+    },
+    {
+      "category": "Travel",
+      "time": "future",
+      "purposes": [
+        {
+          "label": "Check-in Date"
+        },
+        {
+          "label": "Check-out Date"
+        },
+        {
+          "label": "Departure Date"
+        },
+        {
+          "label": "Arrival Date"
+        }
+      ]
+    }
+  ]
+}

@@ -23,6 +23,7 @@ export interface FormField {
   conditionalLogic?: ConditionalLogic;
   validation?: FieldValidation;
   autofill?: AutofillConfig;
+  metadata?: Record<string, any>;
 }
 
 export interface ConditionalLogic {
