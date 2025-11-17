@@ -15,11 +15,15 @@ export function FormFieldInput({
   onFileChange,
   error,
 }: FormFieldInputProps) {
-  const baseInputClasses = `w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-colors min-h-[44px] text-base ${
-    error
-      ? "border-red-300 focus:border-red-500 focus:ring-red-200"
-      : "border-gray-300"
-  }`;
+  const baseInputClasses = `w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent outline-none transition-colors min-h-[44px] text-base`;
+  const baseInputStyle = error
+    ? {
+      borderColor: 'var(--error)',
+      boxShadow: '0 0 0 2px var(--error)',
+    }
+    : {
+      borderColor: 'var(--border-light)',
+    };
 
   const getAutofillProps = () => {
     const props: any = {};
@@ -48,6 +52,7 @@ export function FormFieldInput({
           placeholder={field.placeholder}
           required={field.required}
           className={baseInputClasses}
+          style={baseInputStyle}
           {...getAutofillProps()}
         />
       );
@@ -61,6 +66,7 @@ export function FormFieldInput({
           placeholder={field.placeholder}
           required={field.required}
           className={baseInputClasses}
+          style={baseInputStyle}
           {...getAutofillProps()}
         />
       );
@@ -74,6 +80,7 @@ export function FormFieldInput({
           required={field.required}
           rows={4}
           className={`${baseInputClasses} resize-y min-h-[100px]`}
+          style={baseInputStyle}
           {...getAutofillProps()}
         />
       );
@@ -86,6 +93,7 @@ export function FormFieldInput({
           onChange={(e) => onChange(e.target.value)}
           required={field.required}
           className={baseInputClasses}
+          style={baseInputStyle}
           {...getAutofillProps()}
         />
       );
@@ -98,6 +106,7 @@ export function FormFieldInput({
           onChange={(e) => onChange(e.target.value)}
           required={field.required}
           className={baseInputClasses}
+          style={baseInputStyle}
           {...getAutofillProps()}
         />
       );
@@ -108,7 +117,8 @@ export function FormFieldInput({
           value={value || ""}
           onChange={(e) => onChange(e.target.value)}
           required={field.required}
-          className={`${baseInputClasses} bg-white`}
+          className={baseInputClasses}
+          style={{ ...baseInputStyle, background: 'var(--bg-primary)' }}
           {...getAutofillProps()}
         >
           <option value="">Select an option</option>
@@ -135,9 +145,10 @@ export function FormFieldInput({
                 checked={value === opt}
                 onChange={(e) => onChange(e.target.value)}
                 required={field.required}
-                className="w-5 h-5 text-purple-600 focus:ring-2 focus:ring-purple-500"
+                className="w-5 h-5 focus:ring-2"
+                style={{ color: 'var(--primary-500)' }}
               />
-              <span className="text-gray-700 text-base">{opt}</span>
+              <span style={{ color: 'var(--text-primary)' }} className="text-base">{opt}</span>
             </label>
           ))}
         </div>
@@ -158,8 +169,8 @@ export function FormFieldInput({
                   const currentValue: string[] = Array.isArray(value)
                     ? [...value]
                     : value
-                    ? [value]
-                    : [];
+                      ? [value]
+                      : [];
                   if (e.target.checked) {
                     if (!currentValue.includes(opt)) {
                       onChange([...currentValue, opt]);
@@ -168,9 +179,10 @@ export function FormFieldInput({
                     onChange(currentValue.filter((v: string) => v !== opt));
                   }
                 }}
-                className="w-5 h-5 text-purple-600 rounded focus:ring-2 focus:ring-purple-500"
+                className="w-5 h-5 rounded focus:ring-2"
+                style={{ color: 'var(--primary-500)' }}
               />
-              <span className="text-gray-700 text-base">{opt}</span>
+              <span style={{ color: 'var(--text-primary)' }} className="text-base">{opt}</span>
             </label>
           ))}
         </div>
@@ -189,9 +201,10 @@ export function FormFieldInput({
               }
             }}
             required={field.required}
-            className={`${baseInputClasses} file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 file:text-sm`}
+            className={baseInputClasses}
+            style={{ ...baseInputStyle, background: 'var(--bg-primary)' }}
           />
-          <p className="text-sm text-gray-500 mt-2">
+          <p className="text-sm mt-2" style={{ color: 'var(--text-secondary)' }}>
             Note: File upload using Multer (backend integration pending)
           </p>
         </div>

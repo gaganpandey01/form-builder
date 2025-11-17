@@ -199,6 +199,7 @@ export const fieldTemplates: FieldTemplate[] = (() => {
           label: "Date of Birth",
           required: false,
           autofill: { autocomplete: "bday" },
+          metadata: { dateTime: "past" }, // Enforce cannot be in the future
         },
         {
           type: "select",

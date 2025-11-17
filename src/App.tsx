@@ -42,7 +42,7 @@ export default function GoogleFormsClone() {
   const createNewForm = () => {
     const newForm: Form = {
       id: generateId(),
-      title: "Untitled Form",
+      title: "",
       description: "",
       fields: [],
       settings: {
@@ -61,7 +61,7 @@ export default function GoogleFormsClone() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
+    <div className="min-h-screen" style={{ background: 'var(--bg-app-gradient, linear-gradient(135deg, var(--primary-50), var(--info-50)))' }}>
       <ToastContainer
         position="top-right"
         autoClose={3000}
@@ -72,7 +72,7 @@ export default function GoogleFormsClone() {
         pauseOnFocusLoss
         draggable
         pauseOnHover
-        theme="light"
+      // theme is now controlled by CSS variables only
       />
       <Header
         view={view}

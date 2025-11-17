@@ -1,0 +1,46 @@
+// Primary - Deep Professional Blue
+$primary-50: #E8F1F8;
+$primary-400: #5B9DC8;
+$primary-500: #3E8CBF;
+$primary-600: #3880B8;
+$primary-700: #2F71AF;
+$primary: $primary-500;
+
+// Secondary - Sophisticated Neutral
+$secondary-50: #FAFBFC;
+$secondary-100: #F4F6F8;
+$secondary-200: #E8EBF0;
+$secondary-300: #D1D8E0;
+$secondary: $secondary-50;
+
+// Accent Colors
+$accent-green: #4AA44A;
+$accent-teal: #34BDAA;
+
+// Semantic Colors
+$success: #4AA44A;
+$warning: #F59E0B;
+$error: #DC2626;
+$info: #3E8CBF;
+
+// Text Colors - WCAG AA Compliant
+$text-primary: #1A202C;
+$text-secondary: #5A6877;
+$text-disabled: #A4B0BE;
+$text-inverse: #FFFFFF;
+$text-link: #2F71AF;
+
+// Background Colors
+$bg-primary: #FFFFFF;
+$bg-secondary: #FAFBFC;
+$bg-tertiary: #F4F6F8;
+
+// Border Colors
+$border-light: #E8EBF0;
+$border-medium: #D1D8E0;
+$border-dark: #A4B0BE;
+
+// Shadow Colors
+$shadow-sm: rgba(26, 32, 44, 0.08);
+$shadow-md: rgba(26, 32, 44, 0.12);
+$shadow-lg: rgba(26, 32, 44, 0.16);

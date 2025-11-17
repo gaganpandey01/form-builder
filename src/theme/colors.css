@@ -1,0 +1,77 @@
+:root {
+  /* Primary - Deep Professional Blue */
+  --primary-50: #E8F1F8;
+  --primary-100: #C5DCEC;
+  --primary-200: #9FC5DF;
+  --primary-300: #78AED2;
+  --primary-400: #5B9DC8;
+  --primary-500: #3E8CBF;
+  --primary-600: #3880B8;
+  --primary-700: #2F71AF;
+  --primary-800: #2763A6;
+  --primary-900: #194C97;
+  
+  /* Secondary - Sophisticated Neutral */
+  --secondary-50: #FAFBFC;
+  --secondary-100: #F4F6F8;
+  --secondary-200: #E8EBF0;
+  --secondary-300: #D1D8E0;
+  --secondary-400: #A4B0BE;
+  --secondary-500: #7B8794;
+  --secondary-600: #5A6877;
+  --secondary-700: #434D5B;
+  --secondary-800: #2D3542;
+  --secondary-900: #1A202C;
+  
+  /* Accent Green - Professional Success */
+  --accent-green-50: #F0F8F0;
+  --accent-green-100: #D9EDD9;
+  --accent-green-200: #B8E0B8;
+  --accent-green-300: #8FCC8F;
+  --accent-green-400: #6BB86B;
+  --accent-green-500: #4AA44A;
+  --accent-green-600: #3D8B3D;
+  --accent-green-700: #2F7030;
+  --accent-green-800: #225422;
+  --accent-green-900: #163816;
+  
+  /* Accent Teal - Modern Professional */
+  --accent-teal-50: #E6F7F5;
+  --accent-teal-100: #C2EBE6;
+  --accent-teal-200: #9ADED5;
+  --accent-teal-300: #71D1C4;
+  --accent-teal-400: #52C7B7;
+  --accent-teal-500: #34BDAA;
+  --accent-teal-600: #2DA998;
+  --accent-teal-700: #259182;
+  --accent-teal-800: #1D796C;
+  --accent-teal-900: #145A50;
+  
+  /* Semantic Colors */
+  --success: #4AA44A;
+  --warning: #F59E0B;
+  --error: #DC2626;
+  --info: #3E8CBF;
+  
+  /* Text Colors - WCAG AA Compliant */
+  --text-primary: #1A202C;
+  --text-secondary: #5A6877;
+  --text-disabled: #A4B0BE;
+  --text-inverse: #FFFFFF;
+  --text-link: #2F71AF;
+  
+  /* Background Colors */
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #FAFBFC;
+  --bg-tertiary: #F4F6F8;
+  
+  /* Border Colors */
+  --border-light: #E8EBF0;
+  --border-medium: #D1D8E0;
+  --border-dark: #A4B0BE;
+  
+  /* Shadow Colors */
+  --shadow-sm: rgba(26, 32, 44, 0.08);
+  --shadow-md: rgba(26, 32, 44, 0.12);
+  --shadow-lg: rgba(26, 32, 44, 0.16);
+}

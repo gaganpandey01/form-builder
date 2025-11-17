@@ -40,24 +40,32 @@ const validateRequired = (field: FormField, value: any): ValidationError | null 
 const validateDate = (field: FormField, value: any): ValidationError | null => {
   if (field.type !== "date" || isEmpty(value)) return null;
   const time = field.metadata?.dateTime;
-  const currDate = new Date().toISOString().split("T")[0];
+  const currDate = new Date();
+  const inputDate = new Date(value);
 
-  // ? Check if date should not be in the future
-  if (time === "past" && currDate < value) {
+  // Reset time to midnight for date-only comparison
+  currDate.setHours(0, 0, 0, 0);
+  inputDate.setHours(0, 0, 0, 0);
+
+  // Check if date should not be in the future
+  if (time === "past" && inputDate > currDate) {
     return {
       fieldId: field.id,
-      message: `${field.label} can not be in future`,
+      message: `${field.label} cannot be in the future`,
     };
   }
-  // ? Check if date should not be in the past
-  if (time === "future" && currDate > value) {
+
+  // Check if date should not be in the past
+  if (time === "future" && inputDate < currDate) {
     return {
       fieldId: field.id,
-      message: `${field.label} can not be in past`,
+      message: `${field.label} cannot be in the past`,
     };
   }
+
   return null;
 };
+
 
 // ! Validates string length constraints (min/max)
 const validateStringLength = (field: FormField, value: any): ValidationError | null => {

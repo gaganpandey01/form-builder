@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   Trash2,
   X,
@@ -17,7 +17,6 @@ interface FieldEditorProps {
   deleteField: (id: string) => void;
   duplicateField: (id: string) => void;
   allFields: FormField[];
-  // Drag and drop props
   isDragging?: boolean;
   dragHandleProps?: any;
 }
@@ -112,286 +111,355 @@ export function FieldEditor({
 
   return (
     <div
-      className={`bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 transition-all ${
-        isDragging ? "opacity-50 rotate-2" : ""
-      }`}
+      className={`rounded-xl border transition-all ${isDragging ? "opacity-50 rotate-2" : ""
+        }`}
+      style={{
+        background: "var(--bg-primary)",
+        borderColor: "var(--border-medium)",
+        boxShadow: "0 1px 3px var(--shadow-sm), 0 1px 2px var(--shadow-sm)",
+      }}
     >
-      <div className="flex justify-between items-start mb-4">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          <div
-            {...dragHandleProps}
-            className="cursor-grab active:cursor-grabbing p-1 hover:bg-gray-100 rounded touch-manipulation"
-          >
-            <GripVertical className="w-5 h-5 text-gray-400" />
+      {/* Header Section */}
+      <div
+        className="p-4 sm:p-6 border-b"
+        style={{ borderColor: "var(--border-light)" }}
+      >
+        <div className="flex justify-between items-start">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div
+              {...dragHandleProps}
+              className="cursor-grab active:cursor-grabbing p-2 rounded-lg touch-manipulation transition-colors hover:bg-gray-50"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              <GripVertical className="w-5 h-5" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <input
+                type="text"
+                value={field.label}
+                onChange={(e) =>
+                  updateField(field.id, { label: e.target.value })
+                }
+                className="text-lg font-semibold w-full px-3 py-2 rounded-lg transition-all outline-none border-2 min-h-[44px] sm:min-h-auto"
+                style={{
+                  color: "var(--text-primary)",
+                  background: "var(--bg-secondary)",
+                  borderColor: "var(--border-light)",
+                }}
+                placeholder="Question"
+                onFocus={(e) =>
+                  (e.currentTarget.style.borderColor = "var(--primary-500)")
+                }
+                onBlur={(e) =>
+                  (e.currentTarget.style.borderColor = "var(--border-light)")
+                }
+              />
+              <p
+                className="text-xs mt-2 px-3 font-medium"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                Field #{index + 1} • {field.type.toUpperCase()}
+              </p>
+            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <input
-              type="text"
-              value={field.label}
-              onChange={(e) => updateField(field.id, { label: e.target.value })}
-              className="text-lg font-semibold w-full border-b-2 border-transparent hover:border-gray-300 focus:border-purple-500 outline-none px-2 py-1 min-h-[44px] sm:min-h-auto"
-              placeholder="Question"
-            />
-            <p className="text-sm text-gray-500 mt-1 px-2">
-              Field #{index + 1} • {field.type}
-            </p>
+          <div className="flex gap-2 ml-3">
+            <button
+              onClick={() => duplicateField(field.id)}
+              className="p-2.5 rounded-lg transition-all touch-manipulation hover:bg-blue-50"
+              style={{ color: "var(--primary-600)" }}
+              title="Duplicate field"
+            >
+              <Copy className="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
+            <button
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              className={`p-2.5 rounded-lg transition-all touch-manipulation ${showAdvanced ? "bg-gray-100" : "hover:bg-gray-50"
+                }`}
+              style={{ color: "var(--text-secondary)" }}
+              title="Advanced settings"
+            >
+              <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
+            <button
+              onClick={() => deleteField(field.id)}
+              className="p-2.5 rounded-lg transition-all touch-manipulation hover:bg-red-50"
+              style={{ color: "var(--error)" }}
+              title="Delete field"
+            >
+              <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
           </div>
-        </div>
-        <div className="flex gap-1 sm:gap-2 ml-2">
-          <button
-            onClick={() => duplicateField(field.id)}
-            className="text-blue-600 hover:bg-blue-50 p-2 rounded-lg transition touch-manipulation"
-            title="Duplicate field"
-          >
-            <Copy className="w-4 h-4 sm:w-5 sm:h-5" />
-          </button>
-          <button
-            onClick={() => setShowAdvanced(!showAdvanced)}
-            className="text-gray-500 hover:bg-gray-50 p-2 rounded-lg transition touch-manipulation"
-            title="Advanced settings"
-          >
-            <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
-          </button>
-          <button
-            onClick={() => deleteField(field.id)}
-            className="text-red-500 hover:bg-red-50 p-2 rounded-lg transition touch-manipulation"
-            title="Delete field"
-          >
-            <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
-          </button>
         </div>
       </div>
 
-      <div className="space-y-4">
+      {/* Content Section */}
+      <div className="p-4 sm:p-6 space-y-5">
+        {/* Placeholder Input */}
         {field.type !== "checkbox" &&
           field.type !== "radio" &&
           field.type !== "select" && (
-            <input
-              type="text"
-              value={field.placeholder || ""}
-              onChange={(e) =>
-                updateField(field.id, { placeholder: e.target.value })
-              }
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none min-h-[44px]"
-              placeholder="Placeholder text"
-            />
+            <div>
+              <label
+                className="block text-sm font-medium mb-2"
+                style={{ color: "var(--text-primary)" }}
+              >
+                Placeholder Text
+              </label>
+              <input
+                type="text"
+                value={field.placeholder || ""}
+                onChange={(e) =>
+                  updateField(field.id, { placeholder: e.target.value })
+                }
+                className="w-full px-4 py-3 rounded-lg transition-all outline-none border-2 min-h-[44px]"
+                style={{
+                  border: "2px solid var(--border-medium)",
+                  background: "var(--bg-secondary)",
+                  color: "var(--text-primary)",
+                }}
+                placeholder="Enter placeholder text"
+                onFocus={(e) =>
+                  (e.currentTarget.style.borderColor = "var(--primary-500)")
+                }
+                onBlur={(e) =>
+                  (e.currentTarget.style.borderColor = "var(--border-medium)")
+                }
+              />
+            </div>
           )}
 
+        {/* Options Section */}
         {(field.type === "select" ||
           field.type === "radio" ||
           field.type === "checkbox") && (
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-gray-700">Options:</p>
-            {field.options?.map((opt, i) => (
-              <div key={i} className="flex gap-2">
-                <input
-                  type="text"
-                  value={opt}
-                  onChange={(e) => updateOption(i, e.target.value)}
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none min-h-[44px]"
-                />
+            <div>
+              <label
+                className="block text-sm font-semibold mb-3"
+                style={{ color: "var(--text-primary)" }}
+              >
+                Options
+              </label>
+              <div className="space-y-3">
+                {field.options?.map((opt, i) => (
+                  <div key={i} className="flex gap-3">
+                    <input
+                      type="text"
+                      value={opt}
+                      onChange={(e) => updateOption(i, e.target.value)}
+                      className="flex-1 px-4 py-3 rounded-lg transition-all outline-none border-2 min-h-[44px]"
+                      style={{
+                        border: "2px solid var(--border-medium)",
+                        background: "var(--bg-secondary)",
+                        color: "var(--text-primary)",
+                      }}
+                      onFocus={(e) =>
+                      (e.currentTarget.style.borderColor =
+                        "var(--primary-500)")
+                      }
+                      onBlur={(e) =>
+                      (e.currentTarget.style.borderColor =
+                        "var(--border-medium)")
+                      }
+                    />
+                    <button
+                      onClick={() => removeOption(i)}
+                      className="px-4 py-3 rounded-lg transition-all touch-manipulation min-h-[44px] min-w-[44px] hover:bg-red-50"
+                      style={{ color: "var(--error)" }}
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                ))}
                 <button
-                  onClick={() => removeOption(i)}
-                  className="px-3 py-2 text-red-500 hover:bg-red-50 rounded-lg transition touch-manipulation min-h-[44px] min-w-[44px]"
+                  onClick={addOption}
+                  className="text-sm font-semibold py-2.5 px-4 rounded-lg transition-all hover:bg-blue-50"
+                  style={{ color: "var(--primary-600)" }}
                 >
-                  <X className="w-4 h-4" />
+                  + Add Option
                 </button>
               </div>
-            ))}
-            <button
-              onClick={addOption}
-              className="text-sm text-purple-600 hover:text-purple-700 font-medium py-2 touch-manipulation"
-            >
-              + Add Option
-            </button>
-          </div>
-        )}
+            </div>
+          )}
 
-        <label className="flex items-center gap-3 cursor-pointer py-2">
-          <input
-            type="checkbox"
-            checked={field.required}
-            onChange={(e) =>
-              updateField(field.id, { required: e.target.checked })
-            }
-            className="w-5 h-5 text-purple-600 rounded focus:ring-2 focus:ring-purple-500"
-          />
-          <span className="text-sm font-medium text-gray-700">
-            Required field
-          </span>
-        </label>
+        {/* Required Field Checkbox */}
+        <div
+          className="p-4 rounded-lg"
+          style={{ background: "var(--bg-secondary)" }}
+        >
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={field.required}
+              onChange={(e) =>
+                updateField(field.id, { required: e.target.checked })
+              }
+              className="w-5 h-5 rounded focus:ring-2 outline-none"
+              style={{ accentColor: "var(--primary-600)" }}
+            />
+            <span
+              className="text-sm font-semibold"
+              style={{ color: "var(--text-primary)" }}
+            >
+              Required field
+            </span>
+          </label>
+        </div>
 
         {/* Advanced Settings */}
         {showAdvanced && (
-          <div className="border-t pt-4 space-y-4">
-            <h4 className="font-medium text-gray-800">Advanced Settings</h4>
+          <div
+            className="pt-6 mt-6 space-y-6"
+            style={{ borderTop: "2px solid var(--border-light)" }}
+          >
+          
 
-            {/* Autofill Settings */}
-            <div className="space-y-4">
-              <h5 className="text-sm font-medium text-gray-700">
-                Autofill & Mobile Optimization
+          
+
+            {/* Validation Settings */}
+            <div
+              className="p-5 rounded-lg space-y-4"
+              style={{ background: "var(--bg-secondary)" }}
+            >
+              <h5
+                className="text-xl font-semibold"
+                style={{ color: "var(--text-primary)" }}
+              >
+                Validation Rules
               </h5>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Autocomplete
+                  <label
+                    className="block text-sm font-medium mb-2"
+                    style={{ color: "var(--text-primary)" }}
+                  >
+                    Min Length
                   </label>
-                  <select
-                    value={field.autofill?.autocomplete || ""}
+                  <input
+                    type="number"
+                    value={field.validation?.minLength || ""}
                     onChange={(e) =>
-                      updateAutofillSettings({
-                        autocomplete: e.target.value || undefined,
+                      updateField(field.id, {
+                        validation: {
+                          ...field.validation,
+                          minLength: e.target.value
+                            ? parseInt(e.target.value)
+                            : undefined,
+                        },
                       })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-sm min-h-[44px]"
-                  >
-                    <option value="">Select autocomplete</option>
-                    <option value="name">Full Name</option>
-                    <option value="given-name">First Name</option>
-                    <option value="family-name">Last Name</option>
-                    <option value="email">Email</option>
-                    <option value="tel">Phone</option>
-                    <option value="organization">Company</option>
-                    <option value="organization-title">Job Title</option>
-                    <option value="street-address">Street Address</option>
-                    <option value="address-line1">Address Line 1</option>
-                    <option value="address-line2">Address Line 2</option>
-                    <option value="address-level1">State/Province</option>
-                    <option value="address-level2">City</option>
-                    <option value="postal-code">ZIP/Postal Code</option>
-                    <option value="country-name">Country</option>
-                    <option value="bday">Birthday</option>
-                  </select>
+                    className="w-full px-4 py-3 rounded-lg transition-all outline-none border-2 text-sm min-h-[44px]"
+                    style={{
+                      border: "2px solid var(--border-medium)",
+                      background: "var(--bg-primary)",
+                      color: "var(--text-primary)",
+                    }}
+                    onFocus={(e) =>
+                    (e.currentTarget.style.borderColor =
+                      "var(--primary-500)")
+                    }
+                    onBlur={(e) =>
+                    (e.currentTarget.style.borderColor =
+                      "var(--border-medium)")
+                    }
+                  />
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Input Mode (Mobile)
+                  <label
+                    className="block text-sm font-medium mb-2"
+                    style={{ color: "var(--text-primary)" }}
+                  >
+                    Max Length
                   </label>
-                  <select
-                    value={field.autofill?.inputMode || ""}
+                  <input
+                    type="number"
+                    value={field.validation?.maxLength || ""}
                     onChange={(e) =>
-                      updateAutofillSettings({
-                        inputMode: (e.target.value as any) || undefined,
+                      updateField(field.id, {
+                        validation: {
+                          ...field.validation,
+                          maxLength: e.target.value
+                            ? parseInt(e.target.value)
+                            : undefined,
+                        },
                       })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-sm min-h-[44px]"
-                  >
-                    <option value="">Default</option>
-                    <option value="text">Text</option>
-                    <option value="email">Email Keyboard</option>
-                    <option value="tel">Phone Keyboard</option>
-                    <option value="url">URL Keyboard</option>
-                    <option value="numeric">Number Pad</option>
-                    <option value="decimal">Decimal Keyboard</option>
-                    <option value="search">Search</option>
-                  </select>
+                    className="w-full px-4 py-3 rounded-lg transition-all outline-none border-2 text-sm min-h-[44px]"
+                    style={{
+                      border: "2px solid var(--border-medium)",
+                      background: "var(--bg-primary)",
+                      color: "var(--text-primary)",
+                    }}
+                    onFocus={(e) =>
+                    (e.currentTarget.style.borderColor =
+                      "var(--primary-500)")
+                    }
+                    onBlur={(e) =>
+                    (e.currentTarget.style.borderColor =
+                      "var(--border-medium)")
+                    }
+                  />
                 </div>
               </div>
-            </div>
 
-            {/* Validation Settings */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Min Length
+                <label
+                  className="block text-sm font-medium mb-2"
+                  style={{ color: "var(--text-primary)" }}
+                >
+                  Custom Error Message
                 </label>
                 <input
-                  type="number"
-                  value={field.validation?.minLength || ""}
+                  type="text"
+                  value={field.validation?.customMessage || ""}
                   onChange={(e) =>
                     updateField(field.id, {
                       validation: {
                         ...field.validation,
-                        minLength: e.target.value
-                          ? parseInt(e.target.value)
-                          : undefined,
+                        customMessage: e.target.value || undefined,
                       },
                     })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-sm min-h-[44px]"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Max Length
-                </label>
-                <input
-                  type="number"
-                  value={field.validation?.maxLength || ""}
-                  onChange={(e) =>
-                    updateField(field.id, {
-                      validation: {
-                        ...field.validation,
-                        maxLength: e.target.value
-                          ? parseInt(e.target.value)
-                          : undefined,
-                      },
-                    })
+                  placeholder="Please enter a valid value"
+                  className="w-full px-4 py-3 rounded-lg transition-all outline-none border-2 text-sm min-h-[44px]"
+                  style={{
+                    border: "2px solid var(--border-medium)",
+                    background: "var(--bg-primary)",
+                    color: "var(--text-primary)",
+                  }}
+                  onFocus={(e) =>
+                    (e.currentTarget.style.borderColor = "var(--primary-500)")
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-sm min-h-[44px]"
+                  onBlur={(e) =>
+                  (e.currentTarget.style.borderColor =
+                    "var(--border-medium)")
+                  }
                 />
               </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Custom Validation Pattern (RegEx)
-              </label>
-              <input
-                type="text"
-                value={field.validation?.pattern || ""}
-                onChange={(e) =>
-                  updateField(field.id, {
-                    validation: {
-                      ...field.validation,
-                      pattern: e.target.value || undefined,
-                    },
-                  })
-                }
-                placeholder="^[A-Z]{2,}$"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-sm min-h-[44px]"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Custom Error Message
-              </label>
-              <input
-                type="text"
-                value={field.validation?.customMessage || ""}
-                onChange={(e) =>
-                  updateField(field.id, {
-                    validation: {
-                      ...field.validation,
-                      customMessage: e.target.value || undefined,
-                    },
-                  })
-                }
-                placeholder="Please enter a valid value"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-sm min-h-[44px]"
-              />
             </div>
 
             {/* Conditional Logic */}
-            <div className="border-t pt-4">
+            <div
+              className="p-5 rounded-lg"
+              style={{ background: "var(--bg-secondary)" }}
+            >
               <button
                 onClick={() => setShowConditional(!showConditional)}
-                className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900 py-2 touch-manipulation"
+                className="flex items-center gap-2 text-lg font-semibold w-full py-2 touch-manipulation transition-colors"
+                style={{ color: "var(--text-primary)" }}
               >
                 {showConditional ? (
-                  <ChevronUp className="w-4 h-4" />
+                  <ChevronUp className="w-5 h-5" />
                 ) : (
-                  <ChevronDown className="w-4 h-4" />
+                  <ChevronDown className="w-5 h-5" />
                 )}
                 Conditional Logic
               </button>
 
               {showConditional && (
                 <div className="mt-4 space-y-4">
-                  <label className="flex items-center gap-3 cursor-pointer py-2">
+                  <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg hover:bg-white/50">
                     <input
                       type="checkbox"
                       checked={field.conditionalLogic?.enabled || false}
@@ -406,16 +474,26 @@ export function FieldEditor({
                           },
                         })
                       }
-                      className="w-5 h-5 text-purple-600 rounded focus:ring-2 focus:ring-purple-500"
+                      className="w-5 h-5 rounded focus:ring-2 outline-none"
+                      style={{ accentColor: "var(--primary-600)" }}
                     />
-                    <span className="text-sm font-medium text-gray-700">
+                    <span
+                      className="text-sm font-semibold"
+                      style={{ color: "var(--text-primary)" }}
+                    >
                       Enable conditional logic
                     </span>
                   </label>
 
                   {field.conditionalLogic?.enabled && (
-                    <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
-                      <div className="flex flex-col sm:flex-row gap-4">
+                    <div
+                      className="space-y-4 p-4 rounded-lg"
+                      style={{
+                        background: "var(--bg-primary)",
+                        border: "2px solid var(--border-light)",
+                      }}
+                    >
+                      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
                         <select
                           value={field.conditionalLogic.condition}
                           onChange={(e) =>
@@ -426,12 +504,20 @@ export function FieldEditor({
                               },
                             })
                           }
-                          className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-sm min-h-[44px]"
+                          className="px-1 py-1 rounded-lg transition-all outline-none border-2 text-sm min-h-[30px] font-semibold"
+                          style={{
+                            border: "2px solid var(--border-medium)",
+                            background: "var(--bg-secondary)",
+                            color: "var(--text-primary)",
+                          }}
                         >
                           <option value="show">Show</option>
                           <option value="hide">Hide</option>
                         </select>
-                        <span className="text-sm text-gray-600 self-center">
+                        <span
+                          className="text-base font-medium"
+                          style={{ color: "var(--text-secondary)" }}
+                        >
                           this field if:
                         </span>
                       </div>
@@ -439,7 +525,8 @@ export function FieldEditor({
                       {field.conditionalLogic.rules.map((rule, ruleIndex) => (
                         <div
                           key={ruleIndex}
-                          className="space-y-2 sm:space-y-0 sm:flex sm:gap-2 sm:items-center"
+                          className="space-y-3 sm:space-y-0 sm:flex sm:gap-3 sm:items-center p-3 rounded-lg"
+                          style={{ background: "var(--bg-secondary)" }}
                         >
                           <select
                             value={rule.fieldId}
@@ -448,7 +535,12 @@ export function FieldEditor({
                                 fieldId: e.target.value,
                               })
                             }
-                            className="w-full sm:flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-sm min-h-[44px]"
+                            className="w-full sm:flex-1 px-4 py-3 rounded-lg transition-all outline-none border-2 text-sm min-h-[44px]"
+                            style={{
+                              border: "2px solid var(--border-medium)",
+                              background: "var(--bg-primary)",
+                              color: "var(--text-primary)",
+                            }}
                           >
                             <option value="">Select field</option>
                             {availableFields.map((f) => (
@@ -466,7 +558,12 @@ export function FieldEditor({
                                   .value as ConditionalRule["operator"],
                               })
                             }
-                            className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-sm min-h-[44px]"
+                            className="w-full sm:w-auto px-4 py-3 rounded-lg transition-all outline-none border-2 text-sm min-h-[44px]"
+                            style={{
+                              border: "2px solid var(--border-medium)",
+                              background: "var(--bg-primary)",
+                              color: "var(--text-primary)",
+                            }}
                           >
                             <option value="equals">equals</option>
                             <option value="not_equals">not equals</option>
@@ -485,25 +582,34 @@ export function FieldEditor({
                               })
                             }
                             placeholder="Value"
-                            className="w-full sm:flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-sm min-h-[44px]"
+                            className="w-full sm:flex-1 px-4 py-3 rounded-lg transition-all outline-none border-2 text-sm min-h-[44px]"
+                            style={{
+                              border: "2px solid var(--border-medium)",
+                              background: "var(--bg-primary)",
+                              color: "var(--text-primary)",
+                            }}
                           />
 
                           <button
                             onClick={() => removeConditionalRule(ruleIndex)}
-                            className="w-full sm:w-auto px-3 py-2 text-red-500 hover:bg-red-50 rounded-lg transition touch-manipulation min-h-[44px]"
+                            className="w-full sm:w-auto px-4 py-3 rounded-lg transition-all hover:bg-red-50 touch-manipulation min-h-[44px]"
+                            style={{ color: "var(--error)" }}
                           >
-                            <X className="w-4 h-4 mx-auto" />
+                            <X className="w-5 h-5 mx-auto" />
                           </button>
                         </div>
                       ))}
 
                       {field.conditionalLogic.rules.length > 1 && (
-                        <div>
-                          <label className="text-sm font-medium text-gray-700">
+                        <div className="pt-3">
+                          <label
+                            className="block text-sm font-semibold mb-3"
+                            style={{ color: "var(--text-primary)" }}
+                          >
                             Logic Operator:
                           </label>
-                          <div className="flex flex-col sm:flex-row gap-4 mt-1">
-                            <label className="flex items-center gap-2">
+                          <div className="flex flex-col sm:flex-row gap-3">
+                            <label className="flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-white/50">
                               <input
                                 type="radio"
                                 checked={
@@ -517,13 +623,17 @@ export function FieldEditor({
                                     },
                                   })
                                 }
-                                className="w-4 h-4 text-purple-600"
+                                className="w-5 h-5 rounded"
+                                style={{ accentColor: "var(--primary-600)" }}
                               />
-                              <span className="text-sm">
+                              <span
+                                className="text-sm font-medium"
+                                style={{ color: "var(--text-primary)" }}
+                              >
                                 AND (all rules must match)
                               </span>
                             </label>
-                            <label className="flex items-center gap-2">
+                            <label className="flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-white/50">
                               <input
                                 type="radio"
                                 checked={
@@ -537,9 +647,13 @@ export function FieldEditor({
                                     },
                                   })
                                 }
-                                className="w-4 h-4 text-purple-600"
+                                className="w-5 h-5 rounded"
+                                style={{ accentColor: "var(--primary-600)" }}
                               />
-                              <span className="text-sm">
+                              <span
+                                className="text-sm font-medium"
+                                style={{ color: "var(--text-primary)" }}
+                              >
                                 OR (any rule can match)
                               </span>
                             </label>
@@ -549,7 +663,8 @@ export function FieldEditor({
 
                       <button
                         onClick={addConditionalRule}
-                        className="text-sm text-purple-600 hover:text-purple-700 font-medium py-2 touch-manipulation"
+                        className="text-sm font-semibold py-2.5 px-4 rounded-lg transition-all hover:bg-blue-50 w-full sm:w-auto"
+                        style={{ color: "var(--primary-600)" }}
                       >
                         + Add Rule
                       </button>

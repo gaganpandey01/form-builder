@@ -17,12 +17,15 @@ export function ResponsesView({ form, responses }: ResponsesViewProps) {
 
   if (responses.length === 0) {
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-        <Users className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">
+      <div
+        className="rounded-xl shadow-sm border p-12 text-center"
+        style={{ background: 'var(--bg-primary)', borderColor: 'var(--border-light)' }}
+      >
+        <Users className="w-16 h-16 mx-auto mb-4" style={{ color: 'var(--icon-disabled)' }} />
+        <h2 className="text-2xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
           No Responses Yet
         </h2>
-        <p className="text-gray-600">
+        <p style={{ color: 'var(--text-secondary)' }}>
           Responses will appear here once users submit the form.
         </p>
       </div>
@@ -31,13 +34,16 @@ export function ResponsesView({ form, responses }: ResponsesViewProps) {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div
+        className="rounded-xl shadow-sm border p-6"
+        style={{ background: 'var(--bg-primary)', borderColor: 'var(--border-light)' }}
+      >
         <div className="flex justify-between items-center">
           <div>
-            <h2 className="text-2xl font-bold text-gray-800">
+            <h2 className="text-2xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
               {form.title} - Responses
             </h2>
-            <p className="text-gray-600 mt-1">
+            <p className="mt-1" style={{ color: 'var(--text-secondary)' }}>
               {responses.length} total responses
             </p>
           </div>
@@ -46,13 +52,19 @@ export function ResponsesView({ form, responses }: ResponsesViewProps) {
               onClick={() =>
                 setViewMode(viewMode === "table" ? "individual" : "table")
               }
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
+              className="px-4 py-2 rounded-lg transition"
+              style={{ background: 'var(--border-light)', color: 'var(--text-primary)' }}
+              onMouseOver={e => (e.currentTarget.style.background = 'var(--border-medium)')}
+              onMouseOut={e => (e.currentTarget.style.background = 'var(--border-light)')}
             >
               {viewMode === "table" ? "Individual View" : "Table View"}
             </button>
             <button
               onClick={() => exportToExcel(form, responses)}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+              className="px-4 py-2 rounded-lg transition"
+              style={{ background: 'var(--success)', color: 'var(--text-inverse)' }}
+              onMouseOver={e => (e.currentTarget.style.background = 'var(--success-dark)')}
+              onMouseOut={e => (e.currentTarget.style.background = 'var(--success)')}
             >
               <Download className="w-4 h-4 inline mr-2" />
               Export to Excel
@@ -62,43 +74,53 @@ export function ResponsesView({ form, responses }: ResponsesViewProps) {
       </div>
 
       {viewMode === "table" ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div
+          className="rounded-xl shadow-sm border overflow-hidden"
+          style={{ background: 'var(--bg-primary)', borderColor: 'var(--border-light)' }}
+        >
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead style={{ background: 'var(--border-light)', borderBottom: '1px solid var(--border-medium)' }}>
                 <tr>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                  <th className="px-6 py-4 text-left text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
                     Submission Time
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                  <th className="px-6 py-4 text-left text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
                     User ID
                   </th>
                   {form.fields.map((field) => (
                     <th
                       key={field.id}
-                      className="px-6 py-4 text-left text-sm font-semibold text-gray-700"
+                      className="px-6 py-4 text-left text-sm font-semibold"
+                      style={{ color: 'var(--text-secondary)' }}
                     >
                       {field.label}
                     </th>
                   ))}
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                  <th className="px-6 py-4 text-left text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody>
                 {responses.map((response) => (
-                  <tr key={response.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 text-sm text-gray-600">
+                  <tr
+                    key={response.id}
+                    style={{ cursor: 'pointer' }}
+                    onMouseOver={e => (e.currentTarget.style.background = 'var(--border-light)')}
+                    onMouseOut={e => (e.currentTarget.style.background = 'var(--bg-primary)')}
+                  >
+                    <td className="px-6 py-4 text-sm" style={{ color: 'var(--text-secondary)' }}>
                       {new Date(response.submittedAt).toLocaleString()}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
+                    <td className="px-6 py-4 text-sm" style={{ color: 'var(--text-secondary)' }}>
                       {response.userIdentifier.substring(0, 8)}...
                     </td>
                     {form.fields.map((field) => (
                       <td
                         key={field.id}
-                        className="px-6 py-4 text-sm text-gray-600"
+                        className="px-6 py-4 text-sm"
+                        style={{ color: 'var(--text-secondary)' }}
                       >
                         {Array.isArray(response.responses[field.id])
                           ? response.responses[field.id].join(", ")
@@ -108,7 +130,10 @@ export function ResponsesView({ form, responses }: ResponsesViewProps) {
                     <td className="px-6 py-4 text-sm">
                       <button
                         onClick={() => setSelectedResponse(response)}
-                        className="text-purple-600 hover:text-purple-700 font-medium"
+                        className="font-medium"
+                        style={{ color: 'var(--primary-600)' }}
+                        onMouseOver={e => (e.currentTarget.style.color = 'var(--primary-700)')}
+                        onMouseOut={e => (e.currentTarget.style.color = 'var(--primary-600)')}
                       >
                         View Details
                       </button>
@@ -124,14 +149,15 @@ export function ResponsesView({ form, responses }: ResponsesViewProps) {
           {responses.map((response) => (
             <div
               key={response.id}
-              className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+              className="rounded-xl shadow-sm border p-6"
+              style={{ background: 'var(--bg-primary)', borderColor: 'var(--border-light)' }}
             >
               <div className="flex justify-between items-start mb-4">
                 <div>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                     Submitted: {new Date(response.submittedAt).toLocaleString()}
                   </p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                     User: {response.userIdentifier.substring(0, 8)}...
                   </p>
                 </div>
@@ -139,10 +165,13 @@ export function ResponsesView({ form, responses }: ResponsesViewProps) {
               <div className="space-y-4">
                 {form.fields.map((field) => (
                   <div key={field.id}>
-                    <p className="font-medium text-gray-700 mb-1">
+                    <p className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>
                       {field.label}
                     </p>
-                    <p className="text-gray-600 bg-gray-50 px-4 py-2 rounded-lg">
+                    <p
+                      className="px-4 py-2 rounded-lg"
+                      style={{ color: 'var(--text-secondary)', background: 'var(--border-light)' }}
+                    >
                       {Array.isArray(response.responses[field.id])
                         ? response.responses[field.id].join(", ")
                         : response.responses[field.id] || "-"}

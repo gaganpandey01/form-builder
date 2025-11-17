@@ -1,32 +1,7 @@
-import React, { useState } from "react";
-import { toast } from "react-toastify";
-import {
-  DndContext,
-  closestCenter,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core";
+import { useCallback, useState } from "react";
+import { toast } from "../../utils/toast";
+import { arrayMove } from "@dnd-kit/sortable";
 import type { DragEndEvent } from "@dnd-kit/core";
-import {
-  SortableContext,
-  arrayMove,
-  verticalListSortingStrategy,
-  useSortable,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import {
-  Plus,
-  Save,
-  Settings,
-  QrCode,
-  Copy,
-  Check,
-  X,
-  Layout,
-  ChevronDown,
-  ChevronUp,
-} from "lucide-react";
 import type {
   Form,
   FormField,
@@ -36,183 +11,49 @@ import type {
 } from "../../types";
 import { generateId, generateQRCode } from "../../utils/generators";
 import { getSmartDefaults } from "../../utils/fieldTemplates";
+
+// Direct component imports instead of barrel exports
 import { FieldEditor } from "./FieldEditor";
 import { FormSettings } from "./FormSettings";
 import { FieldTemplates } from "./FieldTemplates";
 import { SaveTemplateModal } from "./SaveTemplateModal";
-
 import { DatePurposeSelector as DatePurposeModal } from "../DatePurposeSelector";
+import AddFieldSection from "./AddFieldSection";
+import { FieldsList } from "./FieldsList";
+import { FormHeader } from "./FormHeader";
+import { QRPanel } from "./QRPanel";
+import FormFooter from "./FormFooter";
+
+// #region Types
 interface AdminPanelProps {
   form: Form;
   setForm: (form: Form) => void;
   forms: Form[];
   setForms: (forms: Form[]) => void;
 }
+// #endregion
 
-function SortableFieldItem({
-  field,
-  index,
-  updateField,
-  deleteField,
-  duplicateField,
-  allFields,
-}: {
-  field: FormField;
-  index: number;
-  updateField: (id: string, updates: Partial<FormField>) => void;
-  deleteField: (id: string) => void;
-  duplicateField: (id: string) => void;
-  allFields: FormField[];
-}) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: field.id });
+// #region Sortable Field Item
+// Removed unused SortableFieldItem
+// #endregion
 
-  const style: React.CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    zIndex: isDragging ? 999 : undefined,
-  };
-
-  const dragHandleProps = { ...attributes, ...listeners };
-
-  return (
-    <div ref={setNodeRef} style={style} className="relative">
-      <FieldEditor
-        field={field}
-        index={index}
-        updateField={updateField}
-        deleteField={deleteField}
-        allFields={allFields}
-        isDragging={isDragging}
-        dragHandleProps={dragHandleProps}
-        duplicateField={duplicateField}
-      />
-    </div>
-  );
-}
-
-// Date Purpose Selector Modal Component
-// function DatePurposeModal({
-//   isOpen,
-//   onClose,
-//   onSelect,
-// }: {
-//   isOpen: boolean;
-//   onClose: () => void;
-//   onSelect: (purpose: string, category: string) => void;
-// }) {
-//   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
-//     new Set()
-//   );
-
-//   if (!isOpen) return null;
-
-//   const toggleCategory = (category: string) => {
-//     setExpandedCategories((prev) => {
-//       const newSet = new Set(prev);
-//       if (newSet.has(category)) {
-//         newSet.delete(category);
-//       } else {
-//         newSet.add(category);
-//       }
-//       return newSet;
-//     });
-//   };
-
-//   return (
-//     <>
-//       {/* Backdrop */}
-//       <div
-//         className="fixed inset-0 bg-black/50 z-[998] animate-in fade-in duration-200"
-//         onClick={onClose}
-//         aria-hidden="true"
-//       />
-
-//       {/* Modal */}
-//       <div
-//         className="fixed left-0 right-0 bottom-0 md:left-1/2 md:right-auto md:bottom-auto md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 bg-white rounded-t-2xl md:rounded-xl max-h-[80vh] md:max-h-[600px] md:w-[90%] md:max-w-[500px] lg:max-w-[600px] flex flex-col z-[999] shadow-2xl"
-//         role="dialog"
-//         aria-modal="true"
-//       >
-//         {/* Header */}
-//         <div className="flex justify-between items-center px-5 py-4 md:px-6 md:py-5 border-b border-gray-200 flex-shrink-0">
-//           <h2 className="text-lg md:text-xl font-semibold text-gray-900">
-//             Select Date Purpose
-//           </h2>
-//           <button
-//             onClick={onClose}
-//             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-//           >
-//             <X size={20} />
-//           </button>
-//         </div>
-
-//         {/* Content */}
-//         <div className="overflow-y-auto flex-1 py-3">
-//           {datePurposesData.datePurposes.map((categoryGroup) => (
-//             <div
-//               key={categoryGroup.category}
-//               className="border-b border-gray-100 last:border-b-0"
-//             >
-//               {/* Category Header */}
-//               <button
-//                 className="w-full flex justify-between items-center px-5 py-4 bg-gray-50 hover:bg-gray-100 active:bg-gray-200 transition-colors text-left"
-//                 onClick={() => toggleCategory(categoryGroup.category)}
-//               >
-//                 <span className="text-base font-semibold text-gray-700">
-//                   {categoryGroup.category}
-//                 </span>
-//                 {expandedCategories.has(categoryGroup.category) ? (
-//                   <ChevronUp size={20} />
-//                 ) : (
-//                   <ChevronDown size={20} />
-//                 )}
-//               </button>
-
-//               {/* Purpose List */}
-//               {expandedCategories.has(categoryGroup.category) && (
-//                 <div className="bg-white">
-//                   {categoryGroup.purposes.map((purpose) => (
-//                     <button
-//                       key={purpose}
-//                       className="w-full px-5 py-3.5 pl-10 text-left text-[15px] text-gray-600 hover:bg-gray-50 active:bg-gray-100 transition-colors min-h-[44px]"
-//                       onClick={() => {
-//                         onSelect(purpose, categoryGroup.category);
-//                         onClose();
-//                       }}
-//                     >
-//                       {purpose}
-//                     </button>
-//                   ))}
-//                 </div>
-//               )}
-//             </div>
-//           ))}
-//         </div>
-//       </div>
-//     </>
-//   );
-// }
-
+// #region AdminPanel Main Component
 export function AdminPanel({
   form,
   setForm,
   forms,
   setForms,
 }: AdminPanelProps) {
+  // #region State
   const [showSettings, setShowSettings] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [showSaveTemplate, setShowSaveTemplate] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showDatePurposeModal, setShowDatePurposeModal] = useState(false);
+  // #endregion
 
+  // #region Constants
   const formUrl = `${window.location.origin}?formId=${form.id}`;
 
   const fieldTypes: FieldType[] = [
@@ -229,9 +70,10 @@ export function AdminPanel({
     { type: "checkbox", label: "Checkboxes" },
     { type: "file", label: "File Upload" },
   ];
+  // #endregion
 
-  const addField = (type: FormField["type"]) => {
-    // Show date purpose modal when adding date field
+  // #region Field Operations
+  const addField = (type: FieldType["type"]) => {
     if (type === "date") {
       setShowDatePurposeModal(true);
       return;
@@ -255,24 +97,28 @@ export function AdminPanel({
     toast.success(`${type} field added!`);
   };
 
-  const handleDatePurposeSelect = (purpose: string, category: string, time:string) => {
+  const handleDatePurposeSelect = (
+    purpose: string,
+    category: string,
+    time: string
+  ) => {
     const smartDefaults = getSmartDefaults("date");
     const newField: FormField = {
       id: generateId(),
       type: "date",
-      label: purpose, // Use the selected purpose as the label
+      label: purpose,
       required: false,
       placeholder: "",
       autofill: smartDefaults.autofill,
-      // Store the category and purpose for reference
       metadata: {
         datePurpose: purpose,
         dateCategory: category,
-        dateTime:time
+        dateTime: time,
       },
     };
     setForm({ ...form, fields: [...form.fields, newField] });
     toast.success(`Date field "${purpose}" added!`);
+    setShowDatePurposeModal(false);
   };
 
   const addTemplate = (template: FieldTemplate | CustomTemplate) => {
@@ -312,8 +158,10 @@ export function AdminPanel({
       setForm({ ...form, fields: newFields });
     }
   };
+  // #endregion
 
-  const sensors = useSensors(useSensor(PointerSensor));
+  // #region Drag and Drop
+  // Removed unused sensors declaration
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -326,179 +174,75 @@ export function AdminPanel({
     const newFields = arrayMove(form.fields, oldIndex, newIndex);
     setForm({ ...form, fields: newFields });
   };
+  // #endregion
 
+  // #region Form Actions
   const saveForm = () => {
     setForms(forms.map((f) => (f.id === form.id ? form : f)));
     toast.success("Form saved successfully!");
   };
-
+  const handleSaveTemplate = useCallback(() => {
+    if (form.fields.length === 0) {
+      toast.error("Add fields before saving as template");
+      return;
+    }
+    setShowSaveTemplate(true);
+  }, [form.fields.length]);
   const copyToClipboard = () => {
     navigator.clipboard.writeText(formUrl);
     setCopied(true);
     toast.success("Link copied to clipboard!");
     setTimeout(() => setCopied(false), 2000);
   };
+  // #endregion
 
+  // #region Render
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-4 sm:space-y-6 pb-24">
       {/* Form Header */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
-        <input
-          type="text"
-          value={form.title}
-          onChange={(e) => setForm({ ...form, title: e.target.value })}
-          className="text-2xl sm:text-3xl font-bold w-full border-none outline-none focus:ring-2 focus:ring-purple-500 rounded px-2 min-h-[44px]"
-          placeholder="Form Title"
-        />
-        <textarea
-          value={form.description}
-          onChange={(e) => setForm({ ...form, description: e.target.value })}
-          className="w-full mt-4 border-none outline-none focus:ring-2 focus:ring-purple-500 rounded px-2 text-gray-600 min-h-[80px] resize-y"
-          placeholder="Form Description"
-          rows={2}
-        />
-
-        <div className="flex flex-col sm:flex-row gap-3 mt-6">
-          <button
-            onClick={saveForm}
-            className="flex-1 sm:flex-none px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition touch-manipulation"
-          >
-            <Save className="w-4 h-4 inline mr-2" />
-            Save Form
-          </button>
-          <button
-            onClick={() => setShowSaveTemplate(true)}
-            disabled={form.fields.length === 0}
-            className={`flex-1 sm:flex-none px-4 py-3 rounded-lg transition touch-manipulation ${
-              form.fields.length === 0
-                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                : "bg-orange-600 text-white hover:bg-orange-700"
-            }`}
-            title={
-              form.fields.length === 0
-                ? "Add fields to save as template"
-                : "Save this form as a reusable template"
-            }
-          >
-            <Plus className="w-4 h-4 inline mr-2" />
-            Save as Template
-          </button>
-          <button
-            onClick={() => setShowSettings(!showSettings)}
-            className="flex-1 sm:flex-none px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition touch-manipulation"
-          >
-            <Settings className="w-4 h-4 inline mr-2" />
-            Settings
-          </button>
-          <button
-            onClick={() => setShowQR(!showQR)}
-            className="flex-1 sm:flex-none px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition touch-manipulation"
-          >
-            <QrCode className="w-4 h-4 inline mr-2" />
-            QR Code
-          </button>
-          <button
-            onClick={copyToClipboard}
-            className="flex-1 sm:flex-none px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition touch-manipulation"
-          >
-            {copied ? (
-              <Check className="w-4 h-4 inline mr-2" />
-            ) : (
-              <Copy className="w-4 h-4 inline mr-2" />
-            )}
-            {copied ? "Copied!" : "Copy Link"}
-          </button>
-        </div>
-      </div>
+      <FormHeader
+        formTitle={form.title}
+        setFormTitle={(title) => setForm({ ...form, title })}
+        formDescription={form.description}
+        setFormDescription={(desc) => setForm({ ...form, description: desc })}
+        onSave={saveForm}
+        onSaveTemplate={() => setShowSaveTemplate(true)}
+        onSettings={() => setShowSettings(!showSettings)}
+        onShowQR={() => setShowQR(!showQR)}
+        onCopy={copyToClipboard}
+        copied={copied}
+        fieldsLength={form.fields.length}
+        showSettings={showSettings}
+        showQR={showQR}
+      />
 
       {/* Settings Panel */}
       {showSettings && <FormSettings form={form} setForm={setForm} />}
 
       {/* QR Code Panel */}
       {showQR && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-bold">QR Code</h3>
-            <button
-              onClick={() => setShowQR(false)}
-              className="touch-manipulation"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-          <div className="flex flex-col items-center">
-            <img
-              src={generateQRCode(formUrl)}
-              alt="Form QR Code"
-              className="border-4 border-gray-200 rounded-lg max-w-full h-auto"
-            />
-            <p className="mt-4 text-sm text-gray-600 break-all text-center">
-              {formUrl}
-            </p>
-          </div>
-        </div>
+        <QRPanel
+          formUrl={formUrl}
+          qrCodeSrc={generateQRCode(formUrl)}
+          onClose={() => setShowQR(false)}
+        />
       )}
 
-      {/* Form Fields with Drag and Drop */}
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
+      {/* Form Fields List */}
+      <FieldsList
+        fields={form.fields}
+        updateField={updateField}
+        deleteField={deleteField}
+        duplicateField={duplicateField}
         onDragEnd={handleDragEnd}
-      >
-        <SortableContext
-          items={form.fields.map((f) => f.id)}
-          strategy={verticalListSortingStrategy}
-        >
-          <div className="space-y-4">
-            {form.fields.map((field, index) => (
-              <SortableFieldItem
-                key={field.id}
-                field={field}
-                index={index}
-                updateField={updateField}
-                deleteField={deleteField}
-                duplicateField={duplicateField}
-                allFields={form.fields}
-              />
-            ))}
-
-            {form.fields.length === 0 && (
-              <div className="text-center py-8 sm:py-12 text-gray-500 border-2 border-dashed border-gray-300 rounded-lg">
-                <p className="text-sm sm:text-base">
-                  No fields added yet. Add your first field below.
-                </p>
-              </div>
-            )}
-          </div>
-        </SortableContext>
-      </DndContext>
+      />
 
       {/* Add Field Section */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-          <h3 className="font-semibold text-lg">Add Field</h3>
-          <button
-            onClick={() => setShowTemplates(true)}
-            className="px-4 py-2 bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-blue-200 rounded-lg hover:border-blue-400 transition text-sm font-medium touch-manipulation"
-          >
-            <Layout className="w-4 h-4 inline mr-2" />
-            Field Templates
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {fieldTypes.map(({ type, label }) => (
-            <button
-              key={type}
-              onClick={() => addField(type)}
-              className="px-4 py-3 bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-200 rounded-lg hover:border-purple-400 transition text-sm font-medium touch-manipulation min-h-[44px]"
-            >
-              <Plus className="w-4 h-4 inline mr-2" />
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
+      <AddFieldSection
+        fieldTypes={fieldTypes}
+        addField={(type) => addField(type)}
+        setShowTemplates={setShowTemplates}
+      />
 
       {/* Field Templates Modal */}
       {showTemplates && (
@@ -513,9 +257,7 @@ export function AdminPanel({
         <SaveTemplateModal
           form={form}
           onClose={() => setShowSaveTemplate(false)}
-          onSaved={() => {
-            // Success message is now shown in SaveTemplateModal component
-          }}
+          onSaved={() => { }}
         />
       )}
 
@@ -525,6 +267,13 @@ export function AdminPanel({
         onClose={() => setShowDatePurposeModal(false)}
         onSelect={handleDatePurposeSelect}
       />
+      <FormFooter
+        onSave={saveForm}
+        onSaveTemplate={handleSaveTemplate}
+        canSaveTemplate={form.fields.length > 0}
+      />
     </div>
   );
+  // #endregion
 }
+// #endregion
