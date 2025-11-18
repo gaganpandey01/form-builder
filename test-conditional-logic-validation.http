@@ -1,0 +1,241 @@
+# Comprehensive Conditional Logic Validation Tests
+
+## Test 1: Valid Conditional Logic
+POST http://localhost:5070/api/forms
+Content-Type: application/json
+
+{
+    "title": "Valid Conditional Logic Form",
+    "description": "Test form with valid conditional logic",
+    "fields": [
+        {
+            "id": "field1",
+            "type": "select",
+            "label": "Country",
+            "required": true,
+            "order": 1,
+            "options": ["USA", "Canada", "Other"],
+            "conditionalLogic": {
+                "enabled": false
+            }
+        },
+        {
+            "id": "field2",
+            "type": "text",
+            "label": "State/Province",
+            "required": false,
+            "order": 2,
+            "conditionalLogic": {
+                "enabled": true,
+                "condition": "show",
+                "operator": "and",
+                "rules": [
+                    {
+                        "fieldId": "field1",
+                        "operator": "equals",
+                        "value": "USA"
+                    }
+                ]
+            }
+        }
+    ]
+}
+
+### Test 2: Invalid - Missing Field Reference
+POST http://localhost:5070/api/forms
+Content-Type: application/json
+
+{
+    "title": "Invalid - Missing Field Reference",
+    "fields": [
+        {
+            "id": "field1",
+            "type": "text",
+            "label": "Test Field",
+            "conditionalLogic": {
+                "enabled": true,
+                "condition": "show",
+                "rules": [
+                    {
+                        "fieldId": "nonexistent_field",
+                        "operator": "equals",
+                        "value": "test"
+                    }
+                ]
+            }
+        }
+    ]
+}
+
+### Test 3: Invalid - Self Reference
+POST http://localhost:5070/api/forms
+Content-Type: application/json
+
+{
+    "title": "Invalid - Self Reference",
+    "fields": [
+        {
+            "id": "field1",
+            "type": "text",
+            "label": "Self Referencing Field",
+            "conditionalLogic": {
+                "enabled": true,
+                "condition": "show",
+                "rules": [
+                    {
+                        "fieldId": "field1",
+                        "operator": "equals",
+                        "value": "test"
+                    }
+                ]
+            }
+        }
+    ]
+}
+
+### Test 4: Invalid - Circular Dependency
+POST http://localhost:5070/api/forms
+Content-Type: application/json
+
+{
+    "title": "Invalid - Circular Dependency",
+    "fields": [
+        {
+            "id": "field1",
+            "type": "text",
+            "label": "Field A",
+            "conditionalLogic": {
+                "enabled": true,
+                "condition": "show",
+                "rules": [
+                    {
+                        "fieldId": "field2",
+                        "operator": "equals",
+                        "value": "test"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "field2",
+            "type": "text",
+            "label": "Field B",
+            "conditionalLogic": {
+                "enabled": true,
+                "condition": "show",
+                "rules": [
+                    {
+                        "fieldId": "field1",
+                        "operator": "equals",
+                        "value": "test"
+                    }
+                ]
+            }
+        }
+    ]
+}
+
+### Test 5: Invalid - Invalid Operator
+POST http://localhost:5070/api/forms
+Content-Type: application/json
+
+{
+    "title": "Invalid - Invalid Operator",
+    "fields": [
+        {
+            "id": "field1",
+            "type": "text",
+            "label": "Base Field"
+        },
+        {
+            "id": "field2",
+            "type": "text",
+            "label": "Dependent Field",
+            "conditionalLogic": {
+                "enabled": true,
+                "condition": "show",
+                "rules": [
+                    {
+                        "fieldId": "field1",
+                        "operator": "invalid_operator",
+                        "value": "test"
+                    }
+                ]
+            }
+        }
+    ]
+}
+
+### Test 6: Invalid - Operator Not Compatible with Field Type
+POST http://localhost:5070/api/forms
+Content-Type: application/json
+
+{
+    "title": "Invalid - Operator Not Compatible",
+    "fields": [
+        {
+            "id": "field1",
+            "type": "text",
+            "label": "Text Field"
+        },
+        {
+            "id": "field2",
+            "type": "text",
+            "label": "Dependent Field",
+            "conditionalLogic": {
+                "enabled": true,
+                "condition": "show",
+                "rules": [
+                    {
+                        "fieldId": "field1",
+                        "operator": "greater_than",
+                        "value": "10"
+                    }
+                ]
+            }
+        }
+    ]
+}
+
+### Test 7: Valid - Complex Multi-Rule Logic
+POST http://localhost:5070/api/forms
+Content-Type: application/json
+
+{
+    "title": "Valid - Complex Multi-Rule Logic",
+    "fields": [
+        {
+            "id": "age",
+            "type": "number",
+            "label": "Age"
+        },
+        {
+            "id": "country",
+            "type": "select",
+            "label": "Country",
+            "options": ["USA", "Canada"]
+        },
+        {
+            "id": "special_field",
+            "type": "text",
+            "label": "Special Field",
+            "conditionalLogic": {
+                "enabled": true,
+                "condition": "show",
+                "operator": "and",
+                "rules": [
+                    {
+                        "fieldId": "age",
+                        "operator": "greater_than",
+                        "value": "18"
+                    },
+                    {
+                        "fieldId": "country",
+                        "operator": "equals",
+                        "value": "USA"
+                    }
+                ]
+            }
+        }
+    ]
+}

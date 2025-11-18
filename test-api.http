@@ -1,0 +1,42 @@
+# Test API Endpoint
+
+### Test Create Form with Invalid GUID
+POST http://localhost:5070/api/forms
+Content-Type: application/json
+
+{
+    "title": "Test Form",
+    "description": "Test form description",
+    "fields": [
+        {
+            "id": "",
+            "type": "text",
+            "label": "Test Field",
+            "required": true,
+            "order": 1
+        }
+    ],
+    "settings": {
+        "allowMultipleResponses": true
+    }
+}
+
+### Test Create Form with Valid Data
+POST http://localhost:5070/api/forms
+Content-Type: application/json
+
+{
+    "title": "Test Form Valid",
+    "description": "Test form description",
+    "fields": [
+        {
+            "type": "text",
+            "label": "Test Field",
+            "required": true,
+            "order": 1
+        }
+    ],
+    "settings": {
+        "allowMultipleResponses": true
+    }
+}

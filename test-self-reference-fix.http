@@ -1,0 +1,78 @@
+# Test Self-Reference Fix
+
+### Test Create Form with Self-Reference (Should Now Work)
+POST http://localhost:5070/api/forms
+Content-Type: application/json
+
+{
+    "title": "Self Reference Test Form",
+    "description": "Test form to verify self-reference fix",
+    "fields": [
+        {
+            "id": "field1",
+            "type": "text",
+            "label": "New text field",
+            "required": true,
+            "order": 1,
+            "conditionalLogic": {
+                "enabled": true,
+                "condition": "show",
+                "operator": "and",
+                "rules": [
+                    {
+                        "fieldId": "field1",
+                        "operator": "equals",
+                        "value": "test"
+                    }
+                ]
+            }
+        }
+    ],
+    "settings": {
+        "allowMultipleResponses": true
+    }
+}
+
+### Test Create Form with Valid Cross-Reference
+POST http://localhost:5070/api/forms
+Content-Type: application/json
+
+{
+    "title": "Valid Cross Reference Test",
+    "description": "Test form with valid conditional logic",
+    "fields": [
+        {
+            "id": "field1",
+            "type": "select",
+            "label": "Trigger Field",
+            "required": true,
+            "order": 1,
+            "options": ["Yes", "No"],
+            "conditionalLogic": {
+                "enabled": false
+            }
+        },
+        {
+            "id": "field2",
+            "type": "text",
+            "label": "Conditional Field",
+            "required": false,
+            "order": 2,
+            "conditionalLogic": {
+                "enabled": true,
+                "condition": "show",
+                "operator": "and",
+                "rules": [
+                    {
+                        "fieldId": "field1",
+                        "operator": "equals",
+                        "value": "Yes"
+                    }
+                ]
+            }
+        }
+    ],
+    "settings": {
+        "allowMultipleResponses": true
+    }
+}

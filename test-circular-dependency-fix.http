@@ -1,0 +1,38 @@
+# Test Create Form - No Circular Dependency Error
+
+### Test Create Form with Fields
+POST http://localhost:5070/api/forms
+Content-Type: application/json
+
+{
+    "title": "Test Form - Fixed",
+    "description": "Test form to verify circular dependency fix",
+    "fields": [
+        {
+            "id": "field1",
+            "type": "text",
+            "label": "New text field",
+            "required": true,
+            "order": 1,
+            "conditionalLogic": {
+                "enabled": false
+            }
+        },
+        {
+            "id": "field2", 
+            "type": "select",
+            "label": "Select Field",
+            "required": false,
+            "order": 2,
+            "options": ["Option 1", "Option 2"],
+            "conditionalLogic": {
+                "enabled": false
+            }
+        }
+    ],
+    "settings": {
+        "allowMultipleResponses": true,
+        "isMultiStep": false,
+        "showProgressBar": true
+    }
+}
