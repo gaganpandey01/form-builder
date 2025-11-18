@@ -1,123 +1,112 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import type { LucideIcon } from "lucide-react";
+export interface Form {
+  id?: string;
+  title: string;
+  description?: string;
+  createdAt?: string;
+  lastModified?: string;
+  fields: FormField[];
+  settings: FormSettings;
+}
+
 export interface FormField {
-  id: string;
-  type: "text" | "email" | "number" | "textarea" | "select" | "radio" | "checkbox" | "date" | "time" | "phone" | "url" | "file";
+  id?: string;
+  type: FieldType;
   label: string;
   placeholder?: string;
   required: boolean;
+  order: number;
   options?: string[];
-  validation?: {
-    minLength?: number;
-    maxLength?: number;
-    pattern?: string;
-    customMessage?: string;
-  };
-  conditionalLogic?: {
-    enabled: boolean;
-    condition: "show" | "hide";
-    rules: ConditionalRule[];
-    operator: "and" | "or";
-  };
-  parentId?: string; // Track parent question for hierarchy
-  depth?: number; // Track nesting depth for indentation
-  metadata?: Record<string, any>; // For additional field data like datePurpose
-  autofill?: AutofillConfig;
+  validationRules?: ValidationRules;
+  conditionalLogic?: ConditionalLogic;
+  parentId?: string;
+  depth: number;
+  metadata?: Record<string, any>;
+}
+
+export type FieldType =
+  | 'text'
+  | 'textarea'
+  | 'email'
+  | 'password'
+  | 'number'
+  | 'date'
+  | 'time'
+  | 'datetime'
+  | 'select'
+  | 'radio'
+  | 'checkbox'
+  | 'file'
+  | 'url';
+
+export interface ValidationRules {
+  required?: boolean;
+  minLength?: number;
+  maxLength?: number;
+  min?: number;
+  max?: number;
+  pattern?: string;
 }
 
 export interface ConditionalLogic {
   enabled: boolean;
-  condition: "show" | "hide";
+  condition: 'show' | 'hide';
+  operator: 'and' | 'or';
   rules: ConditionalRule[];
-  operator: "and" | "or";
 }
 
 export interface ConditionalRule {
   fieldId: string;
-  operator: "equals" | "not_equals" | "contains" | "not_contains" | "greater_than" | "less_than";
+  operator: OperatorType;
   value: string;
-  question?: string;
-  triggerType?: "yes" | "no" | "custom"; // Trigger condition type
-  customValue?: string; // For custom trigger conditions
-  childFields?: FormField[]; // ✅ Changed from boolean to FormField[] for nested questions
 }
 
-export interface FieldValidation {
-  minLength?: number;
-  maxLength?: number;
-  pattern?: string;
-  customMessage?: string;
-}
+export type OperatorType =
+  | 'equals'
+  | 'not_equals'
+  | 'greater_than'
+  | 'less_than'
+  | 'contains'
+  | 'not_contains'
+  | 'starts_with'
+  | 'ends_with'
+  | 'is_empty'
+  | 'is_not_empty';
 
 export interface FormSettings {
   allowMultipleResponses: boolean;
-  closeType: "manual" | "datetime" | "custom";
+  closeType?: string;
   closeDateTime?: string;
   customCloseTime?: number;
   isClosed: boolean;
-  createdAt: string;
-  lastModified?: string | null;  // ✓ Changed to accept null
   isMultiStep: boolean;
   stepsPerPage: number;
   showProgressBar: boolean;
-}
-
-export interface Form {
-  id: string;
-  title: string;
-  description?: string;
-  fields: FormField[];
-  settings?: {
-    [key: string]: any;
-  };
-  lastModified?: string | null;  // ✓ Changed to accept null
+  submitButtonText?: string;
+  successMessage?: string;
+  theme?: string;
 }
 
 export interface FormResponse {
-  id: string;
+  id?: string;
   formId: string;
-  responses: Record<string, any>;
-  submittedAt: string;
   userIdentifier: string;
+  responseData: Record<string, any>;
+  submittedAt?: string;
 }
 
-export interface ValidationError {
-  fieldId: string;
+export interface ApiResponse<T> {
+  success: boolean;
   message: string;
+  data: T;
+  errors?: string[];
 }
 
-export type ViewType = "admin" | "form" | "responses";
-
-export interface FieldType {
-  type: FormField["type"];
-  label: string;
-}
-
-export interface CustomTemplate extends FieldTemplate {
-  isCustom: true;
-  createdAt: string;
-}
-
-
-export interface FieldTemplate {
-  id: string;
-  name: string;
-  description: string;
-  fields: Partial<FormField>[];
-  category?: string;
-  icon: LucideIcon;
-  isCustom?: boolean;
-}
-
-export interface AutofillConfig {
-  autocomplete?: string;
-  inputMode?:
-  | "text"
-  | "email"
-  | "tel"
-  | "url"
-  | "numeric"
-  | "decimal"
-  | "search";
-  pattern?: string;
+export interface PaginatedResponse<T> {
+  data: T[];
+  totalCount: number;
+  pageNumber: number;
+  pageSize: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
 }
