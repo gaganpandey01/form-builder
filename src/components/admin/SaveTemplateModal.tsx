@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { toast } from "../../utils/toast";
-import { X, Save } from "lucide-react";
+import { X, Save, FileText, Clipboard, BarChart, File, User, Calendar, Star, Settings } from "lucide-react";
 import type { Form, CustomTemplate } from "../../types";
 import { generateId } from "../../utils/generators";
 import { addCustomTemplate } from "../../utils/templateStorage";
@@ -20,22 +20,18 @@ export function SaveTemplateModal({
   const [description, setDescription] = useState(
     form.description || "Custom template"
   );
-  const [selectedIcon, setSelectedIcon] = useState("📝");
+  const [selectedIcon, setSelectedIcon] = useState<any>(FileText);
   const [saving, setSaving] = useState(false);
 
   const icons = [
-    "📝",
-    "📋",
-    "📊",
-    "📑",
-    "📄",
-    "🎯",
-    "✅",
-    "📌",
-    "🎨",
-    "⭐",
-    "🔥",
-    "💡",
+    { icon: FileText, name: "FileText" },
+    { icon: Clipboard, name: "Clipboard" },
+    { icon: BarChart, name: "BarChart" },
+    { icon: File, name: "File" },
+    { icon: User, name: "User" },
+    { icon: Calendar, name: "Calendar" },
+    { icon: Star, name: "Star" },
+    { icon: Settings, name: "Settings" },
   ];
 
   const handleSave = () => {
@@ -136,19 +132,22 @@ export function SaveTemplateModal({
               Icon
             </label>
             <div className="grid grid-cols-6 gap-2">
-              {icons.map((icon) => (
-                <button
-                  key={icon}
-                  type="button"
-                  onClick={() => setSelectedIcon(icon)}
-                  className="w-10 h-10 rounded-lg border-2 flex items-center justify-center text-lg transition"
-                  style={selectedIcon === icon
-                    ? { border: '2px solid var(--primary-500)', background: 'var(--primary-50)' }
-                    : { border: '2px solid var(--border-light)' }}
-                >
-                  {icon}
-                </button>
-              ))}
+              {icons.map((iconItem) => {
+                const IconComponent = iconItem.icon;
+                return (
+                  <button
+                    key={iconItem.name}
+                    type="button"
+                    onClick={() => setSelectedIcon(iconItem.icon)}
+                    className="w-10 h-10 rounded-lg border-2 flex items-center justify-center text-lg transition"
+                    style={selectedIcon === iconItem.icon
+                      ? { border: '2px solid var(--primary-500)', background: 'var(--primary-50)' }
+                      : { border: '2px solid var(--border-light)' }}
+                  >
+                    <IconComponent className="w-4 h-4" />
+                  </button>
+                );
+              })}
             </div>
           </div>
 

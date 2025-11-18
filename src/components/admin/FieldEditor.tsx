@@ -7,8 +7,13 @@ import {
   ChevronDown,
   ChevronUp,
   Copy,
+  Plus,
+  Calendar,
 } from "lucide-react";
 import type { FormField, ConditionalRule } from "../../types";
+import { DatePurposeSelector } from "../DatePurposeSelector";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 interface FieldEditorProps {
   field: FormField;
@@ -19,6 +24,8 @@ interface FieldEditorProps {
   allFields: FormField[];
   isDragging?: boolean;
   dragHandleProps?: any;
+  depth?: number;
+  parentPath?: string;
 }
 
 export function FieldEditor({
@@ -30,9 +37,29 @@ export function FieldEditor({
   allFields,
   isDragging,
   dragHandleProps,
+  depth = 0,
+  parentPath = "",
 }: FieldEditorProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showConditional, setShowConditional] = useState(false);
+  const [showDatePurposeModal, setShowDatePurposeModal] = useState(false);
+  const [pendingDateRuleIndex, setPendingDateRuleIndex] = useState<number | null>(null);
+  const [dateValue, setDateValue] = useState<Date | null>(null);
+
+  const indentationStyle = {
+    marginLeft: `${depth * 12}px`,
+    borderLeft: depth > 0 ? "2px solid var(--primary-300)" : "none",
+    paddingLeft: depth > 0 ? "6px" : "0",
+  };
+
+  const getQuestionNumber = () => {
+    if (depth === 0) {
+      return `Q${index + 1}`;
+    }
+    return `${parentPath}.${index + 1}`;
+  };
+
+  const currentQuestionNumber = getQuestionNumber();
 
   const addOption = () => {
     const options = field.options || [];
@@ -55,21 +82,24 @@ export function FieldEditor({
 
   const addConditionalRule = () => {
     const conditionalLogic = field.conditionalLogic || {
-      enabled: false,
+      enabled: true,
       condition: "show",
       rules: [],
       operator: "and",
     };
 
     const newRule: ConditionalRule = {
-      fieldId: "",
+      fieldId: field.id,
       operator: "equals",
       value: "",
+      triggerType: "yes",
+      childFields: [],
     };
 
     updateField(field.id, {
       conditionalLogic: {
         ...conditionalLogic,
+        enabled: true,
         rules: [...conditionalLogic.rules, newRule],
       },
     });
@@ -93,589 +123,470 @@ export function FieldEditor({
 
   const removeConditionalRule = (ruleIndex: number) => {
     const conditionalLogic = field.conditionalLogic!;
+    const remainingRules = conditionalLogic.rules.filter((_, i) => i !== ruleIndex);
+
     updateField(field.id, {
       conditionalLogic: {
         ...conditionalLogic,
-        rules: conditionalLogic.rules.filter((_, i) => i !== ruleIndex),
+        rules: remainingRules,
+        enabled: remainingRules.length > 0,
       },
     });
   };
 
-  const availableFields = allFields.filter((f) => f.id !== field.id);
+  const handleDatePurposeSelect = (purpose: string, category: string, timeType: string) => {
+    if (pendingDateRuleIndex === null) return;
 
-  const updateAutofillSettings = (updates: Partial<FormField["autofill"]>) => {
-    updateField(field.id, {
-      autofill: { ...field.autofill, ...updates },
+    const conditionalLogic = field.conditionalLogic!;
+    const rule = conditionalLogic.rules[pendingDateRuleIndex];
+
+    const newChildField: FormField = {
+      id: `${field.id}-child-${Date.now()}-${Math.random()}`,
+      type: "date",
+      label: purpose,
+      required: false,
+      parentId: field.id,
+      depth: (field.depth || 0) + 1,
+      placeholder: "",
+      metadata: {
+        datePurpose: purpose,
+        dateCategory: category,
+        dateTime: timeType,
+      },
+    };
+
+    const childFields = rule.childFields || [];
+    updateConditionalRule(pendingDateRuleIndex, {
+      childFields: [...childFields, newChildField],
+    });
+
+    setShowDatePurposeModal(false);
+    setPendingDateRuleIndex(null);
+  };
+
+  const addChildQuestion = (ruleIndex: number, fieldType: FormField["type"] = "text") => {
+    if (fieldType === 'date') {
+      setPendingDateRuleIndex(ruleIndex);
+      setShowDatePurposeModal(true);
+      return;
+    }
+
+    const conditionalLogic = field.conditionalLogic!;
+    const rule = conditionalLogic.rules[ruleIndex];
+
+    const newChildField: FormField = {
+      id: `${field.id}-child-${Date.now()}-${Math.random()}`,
+      type: fieldType,
+      label: `New ${fieldType} question`,
+      required: false,
+      parentId: field.id,
+      depth: (field.depth || 0) + 1,
+      ...(fieldType === "select" || fieldType === "radio" || fieldType === "checkbox"
+        ? { options: ["Option 1"] }
+        : {}),
+      ...(fieldType !== "select" && fieldType !== "radio" && fieldType !== "checkbox"
+        ? { placeholder: `Enter ${fieldType}...` }
+        : {}),
+    };
+
+    const childFields = rule.childFields || [];
+    updateConditionalRule(ruleIndex, {
+      childFields: [...childFields, newChildField],
+    });
+  };
+
+  const updateChildField = (
+    ruleIndex: number,
+    childIndex: number,
+    updates: Partial<FormField>
+  ) => {
+    const conditionalLogic = field.conditionalLogic!;
+    const rule = conditionalLogic.rules[ruleIndex];
+    const childFields = [...(rule.childFields || [])];
+    childFields[childIndex] = { ...childFields[childIndex], ...updates };
+
+    updateConditionalRule(ruleIndex, {
+      childFields,
+    });
+  };
+
+  const deleteChildField = (ruleIndex: number, childIndex: number) => {
+    const conditionalLogic = field.conditionalLogic!;
+    const rule = conditionalLogic.rules[ruleIndex];
+    const childFields = (rule.childFields || []).filter((_, i) => i !== childIndex);
+
+    updateConditionalRule(ruleIndex, {
+      childFields,
+    });
+  };
+
+  const duplicateChildField = (ruleIndex: number, childIndex: number) => {
+    const conditionalLogic = field.conditionalLogic!;
+    const rule = conditionalLogic.rules[ruleIndex];
+    const childFields = [...(rule.childFields || [])];
+    const fieldToDuplicate = childFields[childIndex];
+
+    const duplicatedField: FormField = {
+      ...fieldToDuplicate,
+      id: `${fieldToDuplicate.id}-copy-${Date.now()}`,
+      label: `${fieldToDuplicate.label} (Copy)`,
+    };
+
+    updateConditionalRule(ruleIndex, {
+      childFields: [...childFields, duplicatedField],
     });
   };
 
   return (
-    <div
-      className={`rounded-xl border transition-all ${isDragging ? "opacity-50 rotate-2" : ""
-        }`}
-      style={{
-        background: "var(--bg-primary)",
-        borderColor: "var(--border-medium)",
-        boxShadow: "0 1px 3px var(--shadow-sm), 0 1px 2px var(--shadow-sm)",
-      }}
-    >
-      {/* Header Section */}
-      <div
-        className="p-4 sm:p-6 border-b"
-        style={{ borderColor: "var(--border-light)" }}
-      >
-        <div className="flex justify-between items-start">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div
-              {...dragHandleProps}
-              className="cursor-grab active:cursor-grabbing p-2 rounded-lg touch-manipulation transition-colors hover:bg-gray-50"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              <GripVertical className="w-5 h-5" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <input
-                type="text"
-                value={field.label}
-                onChange={(e) =>
-                  updateField(field.id, { label: e.target.value })
-                }
-                className="text-lg font-semibold w-full px-3 py-2 rounded-lg transition-all outline-none border-2 min-h-[44px] sm:min-h-auto"
-                style={{
-                  color: "var(--text-primary)",
-                  background: "var(--bg-secondary)",
-                  borderColor: "var(--border-light)",
-                }}
-                placeholder="Question"
-                onFocus={(e) =>
-                  (e.currentTarget.style.borderColor = "var(--primary-500)")
-                }
-                onBlur={(e) =>
-                  (e.currentTarget.style.borderColor = "var(--border-light)")
-                }
-              />
-              <p
-                className="text-xs mt-2 px-3 font-medium"
-                style={{ color: "var(--text-secondary)" }}
-              >
-                Field #{index + 1} • {field.type.toUpperCase()}
-              </p>
-            </div>
-          </div>
-          <div className="flex gap-2 ml-3">
-            <button
-              onClick={() => duplicateField(field.id)}
-              className="p-2.5 rounded-lg transition-all touch-manipulation hover:bg-blue-50"
-              style={{ color: "var(--primary-600)" }}
-              title="Duplicate field"
-            >
-              <Copy className="w-4 h-4 sm:w-5 sm:h-5" />
-            </button>
-            <button
-              onClick={() => setShowAdvanced(!showAdvanced)}
-              className={`p-2.5 rounded-lg transition-all touch-manipulation ${showAdvanced ? "bg-gray-100" : "hover:bg-gray-50"
-                }`}
-              style={{ color: "var(--text-secondary)" }}
-              title="Advanced settings"
-            >
-              <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
-            </button>
-            <button
-              onClick={() => deleteField(field.id)}
-              className="p-2.5 rounded-lg transition-all touch-manipulation hover:bg-red-50"
-              style={{ color: "var(--error)" }}
-              title="Delete field"
-            >
-              <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Content Section */}
-      <div className="p-4 sm:p-6 space-y-5">
-        {/* Placeholder Input */}
-        {field.type !== "checkbox" &&
-          field.type !== "radio" &&
-          field.type !== "select" && (
-            <div>
-              <label
-                className="block text-sm font-medium mb-2"
-                style={{ color: "var(--text-primary)" }}
-              >
-                Placeholder Text
-              </label>
-              <input
-                type="text"
-                value={field.placeholder || ""}
-                onChange={(e) =>
-                  updateField(field.id, { placeholder: e.target.value })
-                }
-                className="w-full px-4 py-3 rounded-lg transition-all outline-none border-2 min-h-[44px]"
-                style={{
-                  border: "2px solid var(--border-medium)",
-                  background: "var(--bg-secondary)",
-                  color: "var(--text-primary)",
-                }}
-                placeholder="Enter placeholder text"
-                onFocus={(e) =>
-                  (e.currentTarget.style.borderColor = "var(--primary-500)")
-                }
-                onBlur={(e) =>
-                  (e.currentTarget.style.borderColor = "var(--border-medium)")
-                }
-              />
-            </div>
-          )}
-
-        {/* Options Section */}
-        {(field.type === "select" ||
-          field.type === "radio" ||
-          field.type === "checkbox") && (
-            <div>
-              <label
-                className="block text-sm font-semibold mb-3"
-                style={{ color: "var(--text-primary)" }}
-              >
-                Options
-              </label>
-              <div className="space-y-3">
-                {field.options?.map((opt, i) => (
-                  <div key={i} className="flex gap-3">
-                    <input
-                      type="text"
-                      value={opt}
-                      onChange={(e) => updateOption(i, e.target.value)}
-                      className="flex-1 px-4 py-3 rounded-lg transition-all outline-none border-2 min-h-[44px]"
-                      style={{
-                        border: "2px solid var(--border-medium)",
-                        background: "var(--bg-secondary)",
-                        color: "var(--text-primary)",
-                      }}
-                      onFocus={(e) =>
-                      (e.currentTarget.style.borderColor =
-                        "var(--primary-500)")
-                      }
-                      onBlur={(e) =>
-                      (e.currentTarget.style.borderColor =
-                        "var(--border-medium)")
-                      }
-                    />
-                    <button
-                      onClick={() => removeOption(i)}
-                      className="px-4 py-3 rounded-lg transition-all touch-manipulation min-h-[44px] min-w-[44px] hover:bg-red-50"
-                      style={{ color: "var(--error)" }}
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
+    <>
+      <div style={indentationStyle} className="mb-2">
+        <div
+          className={`rounded-lg border transition-all ${isDragging ? "opacity-50 rotate-2" : ""}`}
+          style={{
+            background: depth > 0 ? "var(--bg-secondary)" : "var(--bg-primary)",
+            borderColor: depth > 0 ? "var(--primary-200)" : "var(--border-medium)",
+            boxShadow: "0 1px 2px var(--shadow-sm)",
+          }}
+        >
+          {/* Compact Header */}
+          <div className="p-2 sm:p-3 border-b" style={{ borderColor: "var(--border-light)" }}>
+            <div className="flex justify-between items-center gap-2">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                {depth === 0 && (
+                  <div {...dragHandleProps} className="cursor-grab p-1" style={{ color: "var(--text-secondary)" }}>
+                    <GripVertical className="w-4 h-4" />
                   </div>
-                ))}
+                )}
+
+                {depth > 0 && (
+                  <div
+                    className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+                    style={{
+                      background: "var(--primary-100)",
+                      color: "var(--primary-600)",
+                      border: "1px solid var(--primary-300)",
+                    }}
+                  >
+                    {depth}
+                  </div>
+                )}
+
+                <div className="flex-1 min-w-0">
+                  <input
+                    type="text"
+                    value={field.label || ""}
+                    onChange={(e) => updateField(field.id, { label: e.target.value })}
+                    className="text-sm font-semibold w-full px-2 py-1 rounded border"
+                    style={{
+                      color: "var(--text-primary)",
+                      background: "var(--bg-secondary)",
+                      borderColor: "var(--border-light)",
+                    }}
+                    placeholder={`${currentQuestionNumber} - Question`}
+                  />
+                  <p className="text-xs mt-0.5 px-2" style={{ color: "var(--text-secondary)" }}>
+                    {currentQuestionNumber} • {field.type.toUpperCase()}
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-1">
                 <button
-                  onClick={addOption}
-                  className="text-sm font-semibold py-2.5 px-4 rounded-lg transition-all hover:bg-blue-50"
+                  onClick={() => duplicateField(field.id)}
+                  className="p-1.5 rounded hover:bg-blue-50"
                   style={{ color: "var(--primary-600)" }}
+                  title="Duplicate"
                 >
-                  + Add Option
+                  <Copy className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => setShowAdvanced(!showAdvanced)}
+                  className={`p-1.5 rounded ${showAdvanced ? "bg-gray-100" : "hover:bg-gray-50"}`}
+                  style={{ color: "var(--text-secondary)" }}
+                  title="Settings"
+                >
+                  <Settings className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => deleteField(field.id)}
+                  className="p-1.5 rounded hover:bg-red-50"
+                  style={{ color: "var(--error)" }}
+                  title="Delete"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
-          )}
+          </div>
 
-        {/* Required Field Checkbox */}
-        <div
-          className="p-4 rounded-lg"
-          style={{ background: "var(--bg-secondary)" }}
-        >
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={field.required}
-              onChange={(e) =>
-                updateField(field.id, { required: e.target.checked })
-              }
-              className="w-5 h-5 rounded focus:ring-2 outline-none"
-              style={{ accentColor: "var(--primary-600)" }}
-            />
-            <span
-              className="text-sm font-semibold"
-              style={{ color: "var(--text-primary)" }}
-            >
-              Required field
-            </span>
-          </label>
-        </div>
-
-        {/* Advanced Settings */}
-        {showAdvanced && (
-          <div
-            className="pt-6 mt-6 space-y-6"
-            style={{ borderTop: "2px solid var(--border-light)" }}
-          >
-          
-
-          
-
-            {/* Validation Settings */}
-            <div
-              className="p-5 rounded-lg space-y-4"
-              style={{ background: "var(--bg-secondary)" }}
-            >
-              <h5
-                className="text-xl font-semibold"
-                style={{ color: "var(--text-primary)" }}
-              >
-                Validation Rules
-              </h5>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label
-                    className="block text-sm font-medium mb-2"
-                    style={{ color: "var(--text-primary)" }}
-                  >
-                    Min Length
-                  </label>
-                  <input
-                    type="number"
-                    value={field.validation?.minLength || ""}
-                    onChange={(e) =>
-                      updateField(field.id, {
-                        validation: {
-                          ...field.validation,
-                          minLength: e.target.value
-                            ? parseInt(e.target.value)
-                            : undefined,
-                        },
-                      })
-                    }
-                    className="w-full px-4 py-3 rounded-lg transition-all outline-none border-2 text-sm min-h-[44px]"
-                    style={{
-                      border: "2px solid var(--border-medium)",
-                      background: "var(--bg-primary)",
-                      color: "var(--text-primary)",
-                    }}
-                    onFocus={(e) =>
-                    (e.currentTarget.style.borderColor =
-                      "var(--primary-500)")
-                    }
-                    onBlur={(e) =>
-                    (e.currentTarget.style.borderColor =
-                      "var(--border-medium)")
-                    }
-                  />
-                </div>
-                <div>
-                  <label
-                    className="block text-sm font-medium mb-2"
-                    style={{ color: "var(--text-primary)" }}
-                  >
-                    Max Length
-                  </label>
-                  <input
-                    type="number"
-                    value={field.validation?.maxLength || ""}
-                    onChange={(e) =>
-                      updateField(field.id, {
-                        validation: {
-                          ...field.validation,
-                          maxLength: e.target.value
-                            ? parseInt(e.target.value)
-                            : undefined,
-                        },
-                      })
-                    }
-                    className="w-full px-4 py-3 rounded-lg transition-all outline-none border-2 text-sm min-h-[44px]"
-                    style={{
-                      border: "2px solid var(--border-medium)",
-                      background: "var(--bg-primary)",
-                      color: "var(--text-primary)",
-                    }}
-                    onFocus={(e) =>
-                    (e.currentTarget.style.borderColor =
-                      "var(--primary-500)")
-                    }
-                    onBlur={(e) =>
-                    (e.currentTarget.style.borderColor =
-                      "var(--border-medium)")
-                    }
-                  />
-                </div>
-              </div>
-
-
+          {/* Compact Content */}
+          <div className="p-2 sm:p-3 space-y-2">
+            {/* Date Picker */}
+            {field.type === "date" && (
               <div>
-                <label
-                  className="block text-sm font-medium mb-2"
-                  style={{ color: "var(--text-primary)" }}
-                >
-                  Custom Error Message
-                </label>
+                <label className="block text-xs mb-1" style={{ color: "var(--text-primary)" }}>Date</label>
+                <div className="relative">
+                  <DatePicker
+                    selected={dateValue}
+                    onChange={(date) => setDateValue(date)}
+                    dateFormat="dd/MM/yyyy"
+                    placeholderText={field.placeholder || "Select date"}
+                    className="w-full px-2 py-1.5 pr-8 rounded border text-xs"
+                    showPopperArrow={false}
+                    isClearable
+                  />
+                  <Calendar className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none" style={{ color: "var(--icon-secondary)" }} />
+                </div>
+                {field.metadata && (
+                  <div className="mt-1 p-1.5 rounded text-xs" style={{ background: "var(--bg-secondary)" }}>
+                    <p><strong>Purpose:</strong> {field.metadata.datePurpose}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Placeholder */}
+            {field.type !== "checkbox" && field.type !== "radio" && field.type !== "select" && field.type !== "date" && (
+              <div>
+                <label className="block text-xs mb-1" style={{ color: "var(--text-primary)" }}>Placeholder</label>
                 <input
                   type="text"
-                  value={field.validation?.customMessage || ""}
-                  onChange={(e) =>
-                    updateField(field.id, {
-                      validation: {
-                        ...field.validation,
-                        customMessage: e.target.value || undefined,
-                      },
-                    })
-                  }
-                  placeholder="Please enter a valid value"
-                  className="w-full px-4 py-3 rounded-lg transition-all outline-none border-2 text-sm min-h-[44px]"
-                  style={{
-                    border: "2px solid var(--border-medium)",
-                    background: "var(--bg-primary)",
-                    color: "var(--text-primary)",
-                  }}
-                  onFocus={(e) =>
-                    (e.currentTarget.style.borderColor = "var(--primary-500)")
-                  }
-                  onBlur={(e) =>
-                  (e.currentTarget.style.borderColor =
-                    "var(--border-medium)")
-                  }
+                  value={field.placeholder || ""}
+                  onChange={(e) => updateField(field.id, { placeholder: e.target.value })}
+                  className="w-full px-2 py-1.5 rounded border text-xs"
+                  placeholder="Enter placeholder"
                 />
               </div>
+            )}
+
+            {/* Options */}
+            {(field.type === "select" || field.type === "radio" || field.type === "checkbox") && (
+              <div>
+                <label className="block text-xs mb-1" style={{ color: "var(--text-primary)" }}>Options</label>
+                <div className="space-y-1.5">
+                  {field.options?.map((option, idx) => (
+                    <div key={idx} className="flex gap-1.5">
+                      <input
+                        type="text"
+                        value={option || ""}
+                        onChange={(e) => updateOption(idx, e.target.value)}
+                        className="flex-1 px-2 py-1.5 rounded border text-xs"
+                        placeholder={`Option ${idx + 1}`}
+                      />
+                      <button onClick={() => removeOption(idx)} className="p-1.5 rounded hover:bg-red-50" style={{ color: "var(--error)" }}>
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    onClick={addOption}
+                    className="w-full px-2 py-1.5 rounded border border-dashed text-xs font-medium hover:bg-blue-50"
+                    style={{ borderColor: "var(--primary-300)", color: "var(--primary-600)" }}
+                  >
+                    + Add
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Required */}
+            <div className="flex items-center justify-between p-2 rounded" style={{ background: "var(--bg-secondary)" }}>
+              <label className="text-xs font-medium" style={{ color: "var(--text-primary)" }}>Required</label>
+              <input
+                type="checkbox"
+                checked={field.required || false}
+                onChange={(e) => updateField(field.id, { required: e.target.checked })}
+                className="w-4 h-4 rounded"
+              />
             </div>
+          </div>
 
-            {/* Conditional Logic */}
-            <div
-              className="p-5 rounded-lg"
-              style={{ background: "var(--bg-secondary)" }}
-            >
-              <button
-                onClick={() => setShowConditional(!showConditional)}
-                className="flex items-center gap-2 text-lg font-semibold w-full py-2 touch-manipulation transition-colors"
-                style={{ color: "var(--text-primary)" }}
-              >
-                {showConditional ? (
-                  <ChevronUp className="w-5 h-5" />
-                ) : (
-                  <ChevronDown className="w-5 h-5" />
-                )}
-                Conditional Logic
-              </button>
+          {/* Advanced Settings */}
+          {showAdvanced && (
+            <div className="border-t p-2 sm:p-3 space-y-2" style={{ borderColor: "var(--border-light)" }}>
+              {/* Split Screen: Validation | Conditional */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {/* Left: Validation */}
+                <div className="p-2 rounded space-y-2" style={{ background: "var(--bg-secondary)" }}>
+                  <h6 className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>Validation</h6>
 
-              {showConditional && (
-                <div className="mt-4 space-y-4">
-                  <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg hover:bg-white/50">
+                  {/* Min/Max in same line */}
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <label className="block text-xs mb-0.5" style={{ color: "var(--text-secondary)" }}>Min</label>
+                      <input
+                        type="number"
+                        value={field.validation?.minLength || ""}
+                        onChange={(e) =>
+                          updateField(field.id, {
+                            validation: { ...field.validation, minLength: e.target.value ? parseInt(e.target.value) : undefined },
+                          })
+                        }
+                        className="w-full px-2 py-1 rounded border text-xs"
+                        placeholder="0"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <label className="block text-xs mb-0.5" style={{ color: "var(--text-secondary)" }}>Max</label>
+                      <input
+                        type="number"
+                        value={field.validation?.maxLength || ""}
+                        onChange={(e) =>
+                          updateField(field.id, {
+                            validation: { ...field.validation, maxLength: e.target.value ? parseInt(e.target.value) : undefined },
+                          })
+                        }
+                        className="w-full px-2 py-1 rounded border text-xs"
+                        placeholder="∞"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Error Message Below */}
+                  <div>
+                    <label className="block text-xs mb-0.5" style={{ color: "var(--text-secondary)" }}>Error Msg</label>
                     <input
-                      type="checkbox"
-                      checked={field.conditionalLogic?.enabled || false}
+                      type="text"
+                      value={field.validation?.customMessage || ""}
                       onChange={(e) =>
                         updateField(field.id, {
-                          conditionalLogic: {
-                            enabled: e.target.checked,
-                            condition: "show",
-                            rules: [],
-                            operator: "and",
-                            ...(field.conditionalLogic || {}),
-                          },
+                          validation: { ...field.validation, customMessage: e.target.value || undefined },
                         })
                       }
-                      className="w-5 h-5 rounded focus:ring-2 outline-none"
-                      style={{ accentColor: "var(--primary-600)" }}
+                      placeholder="Custom error"
+                      className="w-full px-2 py-1 rounded border text-xs"
                     />
-                    <span
-                      className="text-sm font-semibold"
-                      style={{ color: "var(--text-primary)" }}
-                    >
-                      Enable conditional logic
-                    </span>
-                  </label>
+                  </div>
+                </div>
 
-                  {field.conditionalLogic?.enabled && (
-                    <div
-                      className="space-y-4 p-4 rounded-lg"
-                      style={{
-                        background: "var(--bg-primary)",
-                        border: "2px solid var(--border-light)",
-                      }}
-                    >
-                      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-                        <select
-                          value={field.conditionalLogic.condition}
+                {/* Right: Conditional Logic */}
+                <div className="p-2 rounded" style={{ background: "var(--bg-secondary)" }}>
+                  <button
+                    onClick={() => setShowConditional(!showConditional)}
+                    className="flex items-center justify-between w-full text-xs font-semibold mb-2"
+                    style={{ color: "var(--text-primary)" }}
+                  >
+                    <span>Conditional</span>
+                    {showConditional ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                  </button>
+
+                  {showConditional && (
+                    <div className="space-y-2">
+                      <label className="flex items-center gap-1.5 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={field.conditionalLogic?.enabled || false}
                           onChange={(e) =>
                             updateField(field.id, {
                               conditionalLogic: {
-                                ...field.conditionalLogic!,
-                                condition: e.target.value as "show" | "hide",
+                                enabled: e.target.checked,
+                                condition: "show",
+                                rules: field.conditionalLogic?.rules || [],
+                                operator: "and",
                               },
                             })
                           }
-                          className="px-1 py-1 rounded-lg transition-all outline-none border-2 text-sm min-h-[30px] font-semibold"
-                          style={{
-                            border: "2px solid var(--border-medium)",
-                            background: "var(--bg-secondary)",
-                            color: "var(--text-primary)",
-                          }}
-                        >
-                          <option value="show">Show</option>
-                          <option value="hide">Hide</option>
-                        </select>
-                        <span
-                          className="text-base font-medium"
-                          style={{ color: "var(--text-secondary)" }}
-                        >
-                          this field if:
-                        </span>
-                      </div>
+                          className="w-3.5 h-3.5 rounded"
+                        />
+                        <span className="text-xs" style={{ color: "var(--text-primary)" }}>Enable</span>
+                      </label>
 
-                      {field.conditionalLogic.rules.map((rule, ruleIndex) => (
-                        <div
-                          key={ruleIndex}
-                          className="space-y-3 sm:space-y-0 sm:flex sm:gap-3 sm:items-center p-3 rounded-lg"
-                          style={{ background: "var(--bg-secondary)" }}
-                        >
-                          <select
-                            value={rule.fieldId}
-                            onChange={(e) =>
-                              updateConditionalRule(ruleIndex, {
-                                fieldId: e.target.value,
-                              })
-                            }
-                            className="w-full sm:flex-1 px-4 py-3 rounded-lg transition-all outline-none border-2 text-sm min-h-[44px]"
-                            style={{
-                              border: "2px solid var(--border-medium)",
-                              background: "var(--bg-primary)",
-                              color: "var(--text-primary)",
-                            }}
-                          >
-                            <option value="">Select field</option>
-                            {availableFields.map((f) => (
-                              <option key={f.id} value={f.id}>
-                                {f.label}
-                              </option>
-                            ))}
-                          </select>
+                      {field.conditionalLogic?.enabled && (
+                        <div className="space-y-2">
+                          {field.conditionalLogic.rules.map((rule, ruleIdx) => (
+                            <div key={ruleIdx} className="p-2 rounded border text-xs" style={{ borderColor: "var(--border-medium)" }}>
+                              <div className="flex justify-between items-center mb-1">
+                                <span className="font-medium">Rule {ruleIdx + 1}</span>
+                                <button onClick={() => removeConditionalRule(ruleIdx)} className="p-0.5 hover:bg-red-50" style={{ color: "var(--error)" }}>
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              </div>
 
-                          <select
-                            value={rule.operator}
-                            onChange={(e) =>
-                              updateConditionalRule(ruleIndex, {
-                                operator: e.target
-                                  .value as ConditionalRule["operator"],
-                              })
-                            }
-                            className="w-full sm:w-auto px-4 py-3 rounded-lg transition-all outline-none border-2 text-sm min-h-[44px]"
-                            style={{
-                              border: "2px solid var(--border-medium)",
-                              background: "var(--bg-primary)",
-                              color: "var(--text-primary)",
-                            }}
-                          >
-                            <option value="equals">equals</option>
-                            <option value="not_equals">not equals</option>
-                            <option value="contains">contains</option>
-                            <option value="not_contains">not contains</option>
-                            <option value="greater_than">greater than</option>
-                            <option value="less_than">less than</option>
-                          </select>
+                              <select
+                                value={rule.triggerType || "yes"}
+                                onChange={(e) =>
+                                  updateConditionalRule(ruleIdx, {
+                                    triggerType: e.target.value as "yes" | "no" | "custom",
+                                    value: e.target.value === "yes" ? "yes" : e.target.value === "no" ? "no" : "",
+                                  })
+                                }
+                                className="w-full px-2 py-1 rounded border text-xs mb-1"
+                              >
+                                <option value="yes">Yes</option>
+                                <option value="no">No</option>
+                                <option value="custom">Custom</option>
+                              </select>
 
-                          <input
-                            type="text"
-                            value={rule.value}
-                            onChange={(e) =>
-                              updateConditionalRule(ruleIndex, {
-                                value: e.target.value,
-                              })
-                            }
-                            placeholder="Value"
-                            className="w-full sm:flex-1 px-4 py-3 rounded-lg transition-all outline-none border-2 text-sm min-h-[44px]"
-                            style={{
-                              border: "2px solid var(--border-medium)",
-                              background: "var(--bg-primary)",
-                              color: "var(--text-primary)",
-                            }}
-                          />
+                              {rule.triggerType === "custom" && (
+                                <input
+                                  type="text"
+                                  value={rule.value || ""}
+                                  onChange={(e) => updateConditionalRule(ruleIdx, { value: e.target.value })}
+                                  placeholder="Value"
+                                  className="w-full px-2 py-1 rounded border text-xs mb-1"
+                                />
+                              )}
+
+                              {rule.childFields && rule.childFields.length > 0 && (
+                                <div className="mt-1 space-y-1">
+                                  {rule.childFields.map((childField, childIdx) => (
+                                    <FieldEditor
+                                      key={childField.id}
+                                      field={childField}
+                                      index={childIdx}
+                                      updateField={(id, updates) => updateChildField(ruleIdx, childIdx, updates)}
+                                      deleteField={() => deleteChildField(ruleIdx, childIdx)}
+                                      duplicateField={() => duplicateChildField(ruleIdx, childIdx)}
+                                      allFields={allFields}
+                                      depth={(field.depth || 0) + 1}
+                                      parentPath={currentQuestionNumber}
+                                    />
+                                  ))}
+                                </div>
+                              )}
+
+                              <div className="mt-1 flex gap-1 flex-wrap">
+                                {["text", "number", "email", "date"].map((type) => (
+                                  <button
+                                    key={type}
+                                    onClick={() => addChildQuestion(ruleIdx, type as FormField["type"])}
+                                    className="px-1.5 py-0.5 rounded text-xs hover:bg-blue-50"
+                                    style={{ border: "1px solid var(--primary-300)", color: "var(--primary-600)" }}
+                                  >
+                                    {type}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
 
                           <button
-                            onClick={() => removeConditionalRule(ruleIndex)}
-                            className="w-full sm:w-auto px-4 py-3 rounded-lg transition-all hover:bg-red-50 touch-manipulation min-h-[44px]"
-                            style={{ color: "var(--error)" }}
+                            onClick={addConditionalRule}
+                            className="w-full px-2 py-1 rounded border border-dashed text-xs font-medium hover:bg-blue-50"
+                            style={{ borderColor: "var(--primary-300)", color: "var(--primary-600)" }}
                           >
-                            <X className="w-5 h-5 mx-auto" />
+                            + Rule
                           </button>
                         </div>
-                      ))}
-
-                      {field.conditionalLogic.rules.length > 1 && (
-                        <div className="pt-3">
-                          <label
-                            className="block text-sm font-semibold mb-3"
-                            style={{ color: "var(--text-primary)" }}
-                          >
-                            Logic Operator:
-                          </label>
-                          <div className="flex flex-col sm:flex-row gap-3">
-                            <label className="flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-white/50">
-                              <input
-                                type="radio"
-                                checked={
-                                  field.conditionalLogic.operator === "and"
-                                }
-                                onChange={() =>
-                                  updateField(field.id, {
-                                    conditionalLogic: {
-                                      ...field.conditionalLogic!,
-                                      operator: "and",
-                                    },
-                                  })
-                                }
-                                className="w-5 h-5 rounded"
-                                style={{ accentColor: "var(--primary-600)" }}
-                              />
-                              <span
-                                className="text-sm font-medium"
-                                style={{ color: "var(--text-primary)" }}
-                              >
-                                AND (all rules must match)
-                              </span>
-                            </label>
-                            <label className="flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-white/50">
-                              <input
-                                type="radio"
-                                checked={
-                                  field.conditionalLogic.operator === "or"
-                                }
-                                onChange={() =>
-                                  updateField(field.id, {
-                                    conditionalLogic: {
-                                      ...field.conditionalLogic!,
-                                      operator: "or",
-                                    },
-                                  })
-                                }
-                                className="w-5 h-5 rounded"
-                                style={{ accentColor: "var(--primary-600)" }}
-                              />
-                              <span
-                                className="text-sm font-medium"
-                                style={{ color: "var(--text-primary)" }}
-                              >
-                                OR (any rule can match)
-                              </span>
-                            </label>
-                          </div>
-                        </div>
                       )}
-
-                      <button
-                        onClick={addConditionalRule}
-                        className="text-sm font-semibold py-2.5 px-4 rounded-lg transition-all hover:bg-blue-50 w-full sm:w-auto"
-                        style={{ color: "var(--primary-600)" }}
-                      >
-                        + Add Rule
-                      </button>
                     </div>
                   )}
                 </div>
-              )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
-    </div>
+
+      {showDatePurposeModal && (
+        <DatePurposeSelector
+          isOpen={showDatePurposeModal}
+          onSelect={handleDatePurposeSelect}
+          onClose={() => {
+            setShowDatePurposeModal(false);
+            setPendingDateRuleIndex(null);
+          }}
+        />
+      )}
+    </>
   );
 }

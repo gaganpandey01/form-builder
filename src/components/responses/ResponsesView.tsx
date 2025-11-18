@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Users, Download } from "lucide-react";
 import type { Form, FormResponse } from "../../types";
 import { exportToExcel } from "../../utils/export";
@@ -10,7 +10,9 @@ interface ResponsesViewProps {
 }
 
 export function ResponsesView({ form, responses }: ResponsesViewProps) {
-  const [viewMode, setViewMode] = useState<"table" | "individual">("table");
+  // API integration point: Connect to backend to fetch form responses
+  // Example: const { data: responses, loading } = useQuery('/api/forms/:id/responses')
+  const [viewMode, setViewMode] = useState<"table" | "individual">("individual"); // Default to card view
   const [selectedResponse, setSelectedResponse] = useState<FormResponse | null>(
     null
   );
@@ -47,27 +49,29 @@ export function ResponsesView({ form, responses }: ResponsesViewProps) {
               {responses.length} total responses
             </p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-2">
+            {/* API integration point: Save user view preferences */}
             <button
               onClick={() =>
                 setViewMode(viewMode === "table" ? "individual" : "table")
               }
-              className="px-4 py-2 rounded-lg transition"
+              className="px-3 py-1.5 rounded-md transition text-sm"
               style={{ background: 'var(--border-light)', color: 'var(--text-primary)' }}
               onMouseOver={e => (e.currentTarget.style.background = 'var(--border-medium)')}
               onMouseOut={e => (e.currentTarget.style.background = 'var(--border-light)')}
             >
-              {viewMode === "table" ? "Individual View" : "Table View"}
+              {viewMode === "table" ? "Cards" : "Table"}
             </button>
+            {/* API integration point: Connect to export service for different formats */}
             <button
               onClick={() => exportToExcel(form, responses)}
-              className="px-4 py-2 rounded-lg transition"
+              className="px-3 py-1.5 rounded-md transition text-sm"
               style={{ background: 'var(--success)', color: 'var(--text-inverse)' }}
               onMouseOver={e => (e.currentTarget.style.background = 'var(--success-dark)')}
               onMouseOut={e => (e.currentTarget.style.background = 'var(--success)')}
             >
-              <Download className="w-4 h-4 inline mr-2" />
-              Export to Excel
+              <Download className="w-3 h-3 inline mr-1" />
+              Export
             </button>
           </div>
         </div>
@@ -145,32 +149,47 @@ export function ResponsesView({ form, responses }: ResponsesViewProps) {
           </div>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* API integration point: Add real-time updates for new responses */}
           {responses.map((response) => (
             <div
               key={response.id}
-              className="rounded-xl shadow-sm border p-6"
+              className="rounded-lg shadow-sm border p-4 hover:shadow-md transition-shadow cursor-pointer"
               style={{ background: 'var(--bg-primary)', borderColor: 'var(--border-light)' }}
+              onClick={() => setSelectedResponse(response)}
             >
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                    Submitted: {new Date(response.submittedAt).toLocaleString()}
+              <div className="flex justify-between items-start mb-3">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-2 h-2 rounded-full" style={{ background: 'var(--success)' }}></div>
+                    <p className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
+                      Response #{responses.indexOf(response) + 1}
+                    </p>
+                  </div>
+                  <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                    {new Date(response.submittedAt).toLocaleString()}
                   </p>
-                  <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                  <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
                     User: {response.userIdentifier.substring(0, 8)}...
                   </p>
                 </div>
+                <button
+                  className="text-xs px-2 py-1 rounded transition-colors"
+                  style={{ background: 'var(--primary-100)', color: 'var(--primary-600)' }}
+                  onClick={(e) => { e.stopPropagation(); setSelectedResponse(response); }}
+                >
+                  View
+                </button>
               </div>
-              <div className="space-y-4">
-                {form.fields.map((field) => (
-                  <div key={field.id}>
-                    <p className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>
+              <div className="space-y-2">
+                {form.fields.slice(0, 3).map((field) => (
+                  <div key={field.id} className="border-l-2 pl-2" style={{ borderColor: 'var(--border-medium)' }}>
+                    <p className="text-xs font-medium mb-1" style={{ color: 'var(--text-primary)' }}>
                       {field.label}
                     </p>
                     <p
-                      className="px-4 py-2 rounded-lg"
-                      style={{ color: 'var(--text-secondary)', background: 'var(--border-light)' }}
+                      className="text-xs px-2 py-1 rounded text-ellipsis overflow-hidden"
+                      style={{ color: 'var(--text-secondary)', background: 'var(--bg-secondary)' }}
                     >
                       {Array.isArray(response.responses[field.id])
                         ? response.responses[field.id].join(", ")
@@ -178,6 +197,11 @@ export function ResponsesView({ form, responses }: ResponsesViewProps) {
                     </p>
                   </div>
                 ))}
+                {form.fields.length > 3 && (
+                  <p className="text-xs text-center pt-2" style={{ color: 'var(--text-secondary)' }}>
+                    +{form.fields.length - 3} more fields
+                  </p>
+                )}
               </div>
             </div>
           ))}

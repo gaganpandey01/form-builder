@@ -1,13 +1,11 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import type { Form, FormResponse, ViewType } from "./types";
 import { generateId } from "./utils/generators";
 import {
   loadForms,
-  saveForms,
   loadResponses,
-  saveResponses,
 } from "./utils/storage";
 import {
   Header,
@@ -25,23 +23,31 @@ export default function GoogleFormsClone() {
   const [selectedFormId, setSelectedFormId] = useState<string>("");
 
   useEffect(() => {
-    // Load from storage
-    setForms(loadForms());
-    setResponses(loadResponses());
+    // Load from storage (now async)
+    const loadData = async () => {
+      try {
+        const [loadedForms, loadedResponses] = await Promise.all([
+          loadForms(),
+          loadResponses()
+        ]);
+        setForms(loadedForms);
+        setResponses(loadedResponses);
+      } catch (error) {
+        console.error("Error loading data:", error);
+        // Fallback to empty arrays if loading fails
+        setForms([]);
+        setResponses([]);
+      }
+    };
+    loadData();
   }, []);
 
-  useEffect(() => {
-    // Save to storage
-    saveForms(forms);
-  }, [forms]);
-
-  useEffect(() => {
-    saveResponses(responses);
-  }, [responses]);
+  // Note: Individual saves are now handled by components using API calls
+  // No need for automatic saving on state changes
 
   const createNewForm = () => {
     const newForm: Form = {
-      id: generateId(),
+      id: "new_" + generateId(),
       title: "",
       description: "",
       fields: [],
@@ -94,11 +100,19 @@ export default function GoogleFormsClone() {
           />
         )}
 
-        {view === "form" && selectedFormId && (
+        {/* Use currentForm.id for preview instead of selectedFormId */}
+        {view === "form" && currentForm && (
           <FormView
-            form={forms.find((f) => f.id === selectedFormId)!}
+            form={currentForm}
             responses={responses}
             setResponses={setResponses}
+          />
+        )}
+
+        {view === "responses" && currentForm && (
+          <ResponsesView
+            form={currentForm}
+            responses={responses.filter((r) => r.formId === currentForm.id)}
           />
         )}
 

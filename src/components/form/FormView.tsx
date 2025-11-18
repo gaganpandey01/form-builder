@@ -6,6 +6,9 @@ import { generateId } from "../../utils/generators";
 import { validateField, validateAllFields } from "../../utils/validation";
 import { getVisibleFields } from "../../utils/conditionalLogic";
 import { FormFieldInput } from "./FormFieldInput";
+import { saveResponse as apiSaveResponse } from "../../utils/storage";
+import { toast } from "../../utils/toast";
+
 
 interface FormViewProps {
   form: Form;
@@ -13,48 +16,59 @@ interface FormViewProps {
   setResponses: (responses: FormResponse[]) => void;
 }
 
+
 export function FormView({ form, responses, setResponses }: FormViewProps) {
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [files, setFiles] = useState<Record<string, File>>({});
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>(
     []
   );
   const [currentStep, setCurrentStep] = useState(0);
 
+
   // Get visible fields based on conditional logic
-  const visibleFields = getVisibleFields(form.fields, formData);
+  const visibleFields = getVisibleFields(form?.fields || [], formData);
+
 
   // Calculate steps for multi-step forms
-  const stepsPerPage = form.settings.stepsPerPage || 5;
-  const totalSteps = form.settings.isMultiStep
-    ? Math.ceil(visibleFields.length / stepsPerPage)
+  const stepsPerPage = form?.settings?.stepsPerPage || 5;
+  const totalSteps = form?.settings?.isMultiStep
+    ? Math.ceil((visibleFields?.length || 0) / stepsPerPage)
     : 1;
 
-  const currentStepFields = form.settings.isMultiStep
-    ? visibleFields.slice(
+
+  const currentStepFields = form?.settings?.isMultiStep
+    ? visibleFields?.slice(
       currentStep * stepsPerPage,
       (currentStep + 1) * stepsPerPage
-    )
-    : visibleFields;
+    ) || []
+    : visibleFields || [];
+
 
   // Real-time validation
   useEffect(() => {
 
+
   }, [formData, visibleFields]);
+
 
   const handleFieldChange = (fieldId: string, value: any) => {
     // console.log("value", value)
 
+
     const newFormData = { ...formData, [fieldId]: value };
     setFormData(newFormData);
 
+
     // Real-time validation for the changed field
-    const field = form.fields.find((f) => f.id === fieldId);
+    const field = form?.fields?.find((f) => f.id === fieldId);
     // console.log("field", field)
     if (field) {
       const fieldError = validateField(field, value);
+
 
       setValidationErrors((prev) => {
         const filtered = prev.filter((e) => e.fieldId !== fieldId);
@@ -63,21 +77,26 @@ export function FormView({ form, responses, setResponses }: FormViewProps) {
     }
   };
 
+
   const getFieldError = (fieldId: string): string | undefined => {
     const error = validationErrors.find((e) => e.fieldId === fieldId);
     return error?.message;
   };
 
+
   const canGoToNextStep = (): boolean => {
-    if (!form.settings.isMultiStep) return true;
+    if (!form?.settings?.isMultiStep) return true;
+
 
     // Check if current step fields are valid
     const currentStepErrors = validationErrors.filter((error) =>
       currentStepFields.some((field) => field.id === error.fieldId)
     );
 
+
     return currentStepErrors.length === 0;
   };
+
 
   const handleNextStep = () => {
     if (currentStep < totalSteps - 1 && canGoToNextStep()) {
@@ -85,20 +104,24 @@ export function FormView({ form, responses, setResponses }: FormViewProps) {
     }
   };
 
+
   const handlePrevStep = () => {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
     }
   };
 
-  const isFormClosed = () => {
-    if (form.settings.isClosed) return true;
 
-    if (form.settings.closeType === "datetime" && form.settings.closeDateTime) {
+  const isFormClosed = () => {
+    if (form?.settings?.isClosed) return true;
+
+
+    if (form?.settings?.closeType === "datetime" && form.settings.closeDateTime) {
       return new Date() > new Date(form.settings.closeDateTime);
     }
 
-    if (form.settings.closeType === "custom" && form.settings.customCloseTime) {
+
+    if (form?.settings?.closeType === "custom" && form.settings.customCloseTime) {
       const createdAt = new Date(form.settings.createdAt);
       const closeTime = new Date(
         createdAt.getTime() + form.settings.customCloseTime * 60 * 60 * 1000
@@ -106,31 +129,38 @@ export function FormView({ form, responses, setResponses }: FormViewProps) {
       return new Date() > closeTime;
     }
 
+
     return false;
   };
 
+
   const hasUserSubmitted = () => {
-    if (form.settings.allowMultipleResponses) return false;
+    if (form?.settings?.allowMultipleResponses) return false;
     const userIdentifier =
-      localStorage.getItem(`form_${form.id}_user`) || generateId();
+      localStorage.getItem(`form_${form?.id}_user`) || generateId();
     return responses.some(
-      (r) => r.formId === form.id && r.userIdentifier === userIdentifier
+      (r) => r.formId === form?.id && r.userIdentifier === userIdentifier
     );
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setValidationErrors([]);
+
 
     if (isFormClosed()) {
       setError("This form is no longer accepting responses.");
       return;
     }
 
+
     if (hasUserSubmitted()) {
       setError("You have already submitted this form.");
       return;
     }
+
 
     // Validate all visible fields
     const errors = validateAllFields(visibleFields, formData);
@@ -140,25 +170,51 @@ export function FormView({ form, responses, setResponses }: FormViewProps) {
       return;
     }
 
-    let userIdentifier = localStorage.getItem(`form_${form.id}_user`);
-    if (!userIdentifier) {
-      userIdentifier = generateId();
-      localStorage.setItem(`form_${form.id}_user`, userIdentifier);
+
+    setSubmitting(true);
+
+
+    try {
+      let userIdentifier = localStorage.getItem(`form_${form?.id}_user`);
+      if (!userIdentifier) {
+        userIdentifier = generateId();
+        localStorage.setItem(`form_${form?.id}_user`, userIdentifier);
+      }
+
+
+      const response: FormResponse = {
+        id: generateId(),
+        formId: form.id,
+        responses: formData,
+        submittedAt: new Date().toISOString(),
+        userIdentifier,
+      };
+
+
+      // Save to backend API
+      const result = await apiSaveResponse(response);
+
+
+      if (result.success && result.data) {
+        // Update local state with saved response
+        setResponses([...responses, result.data]);
+        setSubmitted(true);
+        setFormData({});
+        setFiles({});
+        toast.success("Form submitted successfully!");
+      } else {
+        setError(result.error || "Failed to submit form. Please try again.");
+        toast.error("Failed to submit form");
+      }
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      setError("Failed to submit form. Please try again.");
+      toast.error("Network error occurred");
+    } finally {
+      setSubmitting(false);
     }
-
-    const response: FormResponse = {
-      id: generateId(),
-      formId: form.id,
-      responses: formData,
-      submittedAt: new Date().toISOString(),
-      userIdentifier,
-    };
-
-    setResponses([...responses, response]);
-    setSubmitted(true);
-    setFormData({});
-    setFiles({});
   };
+
 
   if (isFormClosed()) {
     return (
@@ -172,6 +228,7 @@ export function FormView({ form, responses, setResponses }: FormViewProps) {
     );
   }
 
+
   if (submitted) {
     return (
       <div className="rounded-xl shadow-sm border p-12 text-center" style={{ background: 'var(--bg-primary)', borderColor: 'var(--border-light)' }}>
@@ -182,7 +239,7 @@ export function FormView({ form, responses, setResponses }: FormViewProps) {
           Response Submitted!
         </h2>
         <p style={{ color: 'var(--text-secondary)' }}>Thank you for your response.</p>
-        {form.settings.allowMultipleResponses && (
+        {form?.settings?.allowMultipleResponses && (
           <button
             onClick={() => setSubmitted(false)}
             className="mt-6 px-6 py-3 rounded-lg transition"
@@ -197,17 +254,21 @@ export function FormView({ form, responses, setResponses }: FormViewProps) {
     );
   }
 
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Form Header */}
       <div className="rounded-xl shadow-sm border p-8" style={{ background: 'var(--bg-primary)', borderColor: 'var(--border-light)' }}>
-        <h1 className="text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>{form.title.length===0?"Untitled Form":form.title}</h1>
-        {form.description && (
+        <h1 className="text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>
+          {!form?.title || form.title.length === 0 ? "Untitled Form" : form.title}
+        </h1>
+        {form?.description && (
           <p className="mt-3" style={{ color: 'var(--text-secondary)' }}>{form.description}</p>
         )}
 
+
         {/* Progress Bar */}
-        {form.settings.isMultiStep && form.settings.showProgressBar && (
+        {form?.settings?.isMultiStep && form.settings.showProgressBar && (
           <div className="mt-6">
             <div className="flex justify-between items-center mb-2">
               <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
@@ -227,15 +288,18 @@ export function FormView({ form, responses, setResponses }: FormViewProps) {
         )}
       </div>
 
+
       {error && (
         <div className="px-6 py-4 rounded-xl" style={{ background: 'var(--error)', color: 'var(--text-inverse)', borderColor: 'var(--error)' }}>
           {error}
         </div>
       )}
 
+
       {/* Form Fields */}
       {currentStepFields.map((field) => {
         const fieldError = getFieldError(field.id);
+
 
         return (
           <div
@@ -250,6 +314,7 @@ export function FormView({ form, responses, setResponses }: FormViewProps) {
               </span>
             </label>
 
+
             <FormFieldInput
               field={field}
               value={formData[field.id]}
@@ -257,6 +322,7 @@ export function FormView({ form, responses, setResponses }: FormViewProps) {
               onFileChange={(file) => setFiles({ ...files, [field.id]: file })}
               error={fieldError}
             />
+
 
             {fieldError && (
               <p className="mt-2 text-sm flex items-center gap-1" style={{ color: 'var(--error)' }}>
@@ -270,10 +336,11 @@ export function FormView({ form, responses, setResponses }: FormViewProps) {
         );
       })}
 
+
       {/* Navigation Buttons */}
       <div className="flex justify-between items-center">
         <div>
-          {form.settings.isMultiStep && currentStep > 0 && (
+          {form?.settings?.isMultiStep && currentStep > 0 && (
             <button
               type="button"
               onClick={handlePrevStep}
@@ -288,6 +355,7 @@ export function FormView({ form, responses, setResponses }: FormViewProps) {
           )}
         </div>
 
+
         <div className="flex gap-4">
           <button
             type="button"
@@ -300,7 +368,8 @@ export function FormView({ form, responses, setResponses }: FormViewProps) {
             Clear Form
           </button>
 
-          {form.settings.isMultiStep && currentStep < totalSteps - 1 ? (
+
+          {form?.settings?.isMultiStep && currentStep < totalSteps - 1 ? (
             <button
               type="button"
               onClick={handleNextStep}
@@ -316,13 +385,13 @@ export function FormView({ form, responses, setResponses }: FormViewProps) {
           ) : (
             <button
               type="submit"
-              disabled={validationErrors.length > 0}
-              className={`px-8 py-3 rounded-lg transition font-medium ${validationErrors.length > 0 ? 'cursor-not-allowed' : ''}`}
-              style={validationErrors.length === 0
+              disabled={validationErrors.length > 0 || submitting}
+              className={`px-8 py-3 rounded-lg transition font-medium ${validationErrors.length > 0 || submitting ? 'cursor-not-allowed' : ''}`}
+              style={validationErrors.length === 0 && !submitting
                 ? { background: 'linear-gradient(90deg, var(--primary-700), var(--primary-500))', color: 'var(--text-inverse)' }
                 : { background: 'var(--border-light)', color: 'var(--text-disabled)' }}
             >
-              Submit Response
+              {submitting ? 'Submitting...' : 'Submit Response'}
             </button>
           )}
         </div>

@@ -1,4 +1,4 @@
-import React from "react";
+
 import { Plus, Settings } from "lucide-react";
 
 interface EmptyStateProps {

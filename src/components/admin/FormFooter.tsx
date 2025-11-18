@@ -13,6 +13,7 @@ const FormFooter: React.FC<FormFooterProps> = ({
     onSaveTemplate,
     canSaveTemplate = true
 }) => {
+    
     return (
         <div
             className="fixed bottom-0 left-0 right-0 p-4 shadow-lg z-50"

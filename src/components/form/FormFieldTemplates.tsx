@@ -44,6 +44,7 @@ export function FieldTemplates({
     { id: "event", name: "Event", icon: <Calendar className="w-4 h-4" /> },
     { id: "feedback", name: "Feedback", icon: <Star className="w-4 h-4" /> },
   ];
+
   const filteredTemplates = fieldTemplates.filter((template) => {
     const matchesCategory =
       selectedCategory === "all" || template.category === selectedCategory;
@@ -55,41 +56,29 @@ export function FieldTemplates({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      {" "}
       <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-auto">
-        {/* Header */}               {" "}
+        {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-          {" "}
           <div>
-            {" "}
             <h3 className="text-xl font-bold">Field Templates</h3>
-            {" "}
             <p className="text-sm text-gray-600">
-              Choose from pre-built field
-              collections                        {" "}
+              Choose from pre-built field collections
             </p>
-            {" "}
           </div>
-          {" "}
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700 p-2 rounded-lg hover:bg-gray-100"
           >
-            <X className="w-5 h-5" />                   {" "}
+            <X className="w-5 h-5" />
           </button>
-          {" "}
         </div>
-        {" "}
+        
         <div className="flex h-full">
-          {/* Sidebar */}                   {" "}
-          <div className="w-64 border-r border-gray-200 bg-gray-50 o">
-            {" "}
+          {/* Sidebar */}
+          <div className="w-64 border-r border-gray-200 bg-gray-50">
             <div className="p-4">
-              {" "}
               <div className="relative mb-4">
-                {" "}
                 <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                {" "}
                 <input
                   type="text"
                   placeholder="Search templates..."
@@ -97,24 +86,19 @@ export function FieldTemplates({
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-sm"
                 />
-                {" "}
               </div>
-              {" "}
+              
               <div className="space-y-1">
-                {" "}
                 {categories.map((category) => (
                   <button
                     key={category.id}
                     onClick={() => setSelectedCategory(category.id as any)}
-                    className={`w-full text-left px-3 py-2 rounded-lg transition text-sm flex items-center gap-2 ${selectedCategory === category.id
-                      ? "bg-purple-100 text-purple-700 font-medium"
-                      : "text-gray-700 hover:bg-gray-100"
-                      }`}
+                    className={`w-full text-left px-3 py-2 rounded-lg transition text-sm flex items-center gap-2 ${
+                      selectedCategory === category.id
+                        ? "bg-purple-100 text-purple-700 font-medium"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
                   >
-                    {" "}
-                    <span className="inline-flex items-center" />
-                    {" "}
-                    return (
                     <span className="inline-flex items-center">
                       {category.icon}
                     </span>
@@ -124,6 +108,7 @@ export function FieldTemplates({
               </div>
             </div>
           </div>
+          
           {/* Content */}
           <div className="flex-1 min-h-0">
             <div className="p-6 overflow-auto">
@@ -149,13 +134,13 @@ export function FieldTemplates({
                           {template.fields.slice(0, 3).map((field, index) => (
                             <span
                               key={index}
-                              className="inline-block px-2 py-1 rounded bg-gray-100 text-gray-600"
+                              className="inline-block px-2 py-1 text-xs rounded bg-gray-100 text-gray-600"
                             >
                               {field.label}
                             </span>
                           ))}
                           {template.fields.length > 3 && (
-                            <span className="inline-block px-2 py-1 rounded bg-gray-100 text-gray-600">
+                            <span className="inline-block px-2 py-1 text-xs rounded bg-gray-100 text-gray-600">
                               +{template.fields.length - 3} more
                             </span>
                           )}
@@ -166,6 +151,7 @@ export function FieldTemplates({
                   </div>
                 ))}
               </div>
+              
               {filteredTemplates.length === 0 && (
                 <div className="text-center py-12 text-gray-400">
                   <p>No templates found matching your criteria.</p>

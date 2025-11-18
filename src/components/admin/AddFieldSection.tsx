@@ -1,6 +1,6 @@
 import React from "react";
 import { Plus, Layout } from "lucide-react";
-import type { FieldType } from "../../types";
+
 
 import type { FormField } from "../../types";
 
@@ -32,45 +32,46 @@ const AddFieldSection: React.FC<AddFieldSectionProps> = ({
         </h3>
         <button
           onClick={() => setShowTemplates(true)}
-          className="px-4 py-2 rounded-lg transition text-sm font-medium touch-manipulation"
+          className="px-3 py-1.5 rounded-md transition text-xs font-medium touch-manipulation"
           style={{
             background: "var(--accent-light)",
-            border: "2px solid var(--accent)",
+            border: "1px solid var(--accent)",
             color: "var(--text-primary)",
           }}
           onMouseOver={(e) =>
-            (e.currentTarget.style.border = "2px solid var(--accent-dark)")
+            (e.currentTarget.style.border = "1px solid var(--accent-dark)")
           }
           onMouseOut={(e) =>
-            (e.currentTarget.style.border = "2px solid var(--accent)")
+            (e.currentTarget.style.border = "1px solid var(--accent)")
           }
         >
-          <Layout className="w-4 h-4 inline mr-2" />
-          Field Templates
+          <Layout className="w-3 h-3 inline mr-1" />
+          Templates
         </button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+        {/* API integration point: Fetch available field types from backend configuration */}
         {fieldTypes.map(({ type, label }) => (
           <button
             key={String(type)}
             onClick={() => addField(type)}
-            className="px-4 py-3 rounded-lg transition text-sm font-medium touch-manipulation min-h-[44px]"
+            className="px-2 py-2 rounded-md transition text-xs font-medium touch-manipulation min-h-[32px]"
             style={{
               background: "var(--primary-50)",
-              border: "2px solid var(--primary-200)",
+              border: "1px solid var(--primary-200)",
               color: "var(--text-primary)",
             }}
             onMouseOver={(e) =>
             (e.currentTarget.style.border =
-              "2px solid var(--primary-400)")
+              "1px solid var(--primary-400)")
             }
             onMouseOut={(e) =>
             (e.currentTarget.style.border =
-              "2px solid var(--primary-200)")
+              "1px solid var(--primary-200)")
             }
           >
-            <Plus className="w-4 h-4 inline mr-2" />
+            <Plus className="w-3 h-3 inline mr-1" />
             {label}
           </button>
         ))}

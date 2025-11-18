@@ -1,5 +1,10 @@
-export {  FieldEditor } from "./FieldEditor";
-export {  FormSettings } from "./FormSettings";
-export {  FieldTemplates } from "./FieldTemplates";
-export {  SaveTemplateModal } from "./SaveTemplateModal";
-// Add other components as needed
+export { AdminPanel } from "./AdminPanel";
+export { FieldEditor } from "./FieldEditor";
+export { FormSettings } from "./FormSettings";
+export { FieldTemplates } from "./FieldTemplates";
+export { SaveTemplateModal } from "./SaveTemplateModal";
+export { default as AddFieldSection } from "./AddFieldSection";
+export { FieldsList } from "./FieldsList";
+export { default as FormFooter } from "./FormFooter";
+export { FormHeader } from "./FormHeader";
+export { QRPanel } from "./QRPanel";

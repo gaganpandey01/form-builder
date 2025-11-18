@@ -2,28 +2,27 @@
 import type { LucideIcon } from "lucide-react";
 export interface FormField {
   id: string;
-  type:
-    | "text"
-    | "email"
-    | "number"
-    | "textarea"
-    | "select"
-    | "radio"
-    | "checkbox"
-    | "file"
-    | "date"
-    | "time"
-    | "url"
-    | "phone";
+  type: "text" | "email" | "number" | "textarea" | "select" | "radio" | "checkbox" | "date" | "time" | "phone" | "url" | "file";
   label: string;
+  placeholder?: string;
   required: boolean;
   options?: string[];
-  placeholder?: string;
-  // New properties for conditional logic
-  conditionalLogic?: ConditionalLogic;
-  validation?: FieldValidation;
+  validation?: {
+    minLength?: number;
+    maxLength?: number;
+    pattern?: string;
+    customMessage?: string;
+  };
+  conditionalLogic?: {
+    enabled: boolean;
+    condition: "show" | "hide";
+    rules: ConditionalRule[];
+    operator: "and" | "or";
+  };
+  parentId?: string; // Track parent question for hierarchy
+  depth?: number; // Track nesting depth for indentation
+  metadata?: Record<string, any>; // For additional field data like datePurpose
   autofill?: AutofillConfig;
-  metadata?: Record<string, any>;
 }
 
 export interface ConditionalLogic {
@@ -35,14 +34,12 @@ export interface ConditionalLogic {
 
 export interface ConditionalRule {
   fieldId: string;
-  operator:
-    | "equals"
-    | "not_equals"
-    | "contains"
-    | "not_contains"
-    | "greater_than"
-    | "less_than";
+  operator: "equals" | "not_equals" | "contains" | "not_contains" | "greater_than" | "less_than";
   value: string;
+  question?: string;
+  triggerType?: "yes" | "no" | "custom"; // Trigger condition type
+  customValue?: string; // For custom trigger conditions
+  childFields?: FormField[]; // ✅ Changed from boolean to FormField[] for nested questions
 }
 
 export interface FieldValidation {
@@ -56,10 +53,10 @@ export interface FormSettings {
   allowMultipleResponses: boolean;
   closeType: "manual" | "datetime" | "custom";
   closeDateTime?: string;
-  customCloseTime?: number; // in hours
+  customCloseTime?: number;
   isClosed: boolean;
   createdAt: string;
-  // New properties for multi-step forms
+  lastModified?: string | null;  // ✓ Changed to accept null
   isMultiStep: boolean;
   stepsPerPage: number;
   showProgressBar: boolean;
@@ -68,9 +65,12 @@ export interface FormSettings {
 export interface Form {
   id: string;
   title: string;
-  description: string;
+  description?: string;
   fields: FormField[];
-  settings: FormSettings;
+  settings?: {
+    [key: string]: any;
+  };
+  lastModified?: string | null;  // ✓ Changed to accept null
 }
 
 export interface FormResponse {
@@ -93,14 +93,9 @@ export interface FieldType {
   label: string;
 }
 
-export interface CustomTemplate {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  fields: FormField[];
-  createdAt: string;
+export interface CustomTemplate extends FieldTemplate {
   isCustom: true;
+  createdAt: string;
 }
 
 
@@ -108,27 +103,21 @@ export interface FieldTemplate {
   id: string;
   name: string;
   description: string;
-  icon: LucideIcon; // Changed from string to LucideIcon
-  category:
-    | "contact"
-    | "address"
-    | "personal"
-    | "business"
-    | "event"
-    | "feedback";
-  fields: FormField[];
+  fields: Partial<FormField>[];
+  category?: string;
+  icon: LucideIcon;
   isCustom?: boolean;
 }
 
 export interface AutofillConfig {
   autocomplete?: string;
   inputMode?:
-    | "text"
-    | "email"
-    | "tel"
-    | "url"
-    | "numeric"
-    | "decimal"
-    | "search";
+  | "text"
+  | "email"
+  | "tel"
+  | "url"
+  | "numeric"
+  | "decimal"
+  | "search";
   pattern?: string;
 }

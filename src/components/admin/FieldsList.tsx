@@ -1,16 +1,7 @@
-import React from "react";
-import {
-  DndContext,
-  closestCenter,
-  PointerSensor,
-  useSensor,
-  useSensors,
-
-} from "@dnd-kit/core";
+import { DndContext,  closestCenter } from "@dnd-kit/core";
 import type { DragEndEvent } from "@dnd-kit/core";
 import {
   SortableContext,
-  arrayMove,
   verticalListSortingStrategy,
   useSortable,
 } from "@dnd-kit/sortable";
@@ -50,48 +41,59 @@ function SortableFieldItem({
     isDragging,
   } = useSortable({ id: field.id });
 
-  const style: React.CSSProperties = {
+  const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    zIndex: isDragging ? 999 : undefined,
   };
 
-  const dragHandleProps = { ...attributes, ...listeners };
-
   return (
-    <div ref={setNodeRef} style={style} className="relative">
+    <div ref={setNodeRef} style={style}>
       <FieldEditor
         field={field}
         index={index}
         updateField={updateField}
         deleteField={deleteField}
+        duplicateField={duplicateField}
         allFields={allFields}
         isDragging={isDragging}
-        dragHandleProps={dragHandleProps}
-        duplicateField={duplicateField}
+        dragHandleProps={{ ...attributes, ...listeners }}
       />
     </div>
   );
 }
 
-export const FieldsList: React.FC<FieldsListProps> = ({
+export function FieldsList({
   fields,
   updateField,
   deleteField,
   duplicateField,
   onDragEnd,
-}) => {
-  const sensors = useSensors(useSensor(PointerSensor));
-  return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragEnd={onDragEnd}
-    >
-      <SortableContext
-        items={fields.map((f) => f.id)}
-        strategy={verticalListSortingStrategy}
+}: FieldsListProps) {
+  if (fields.length === 0) {
+    return (
+      <div
+        className="text-center py-12 rounded-xl border-2 border-dashed"
+        style={{
+          background: "var(--bg-secondary)",
+          borderColor: "var(--border-light)",
+        }}
       >
+        <p
+          className="text-lg font-medium mb-2"
+          style={{ color: "var(--text-secondary)" }}
+        >
+          No fields yet
+        </p>
+        <p className="text-sm" style={{ color: "var(--text-tertiary)" }}>
+          Add fields below to start building your form
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <DndContext collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+      <SortableContext items={fields.map((f) => f.id)} strategy={verticalListSortingStrategy}>
         <div className="space-y-4">
           {fields.map((field, index) => (
             <SortableFieldItem
@@ -104,18 +106,8 @@ export const FieldsList: React.FC<FieldsListProps> = ({
               allFields={fields}
             />
           ))}
-          {fields.length === 0 && (
-            <div
-              className="text-center py-8 sm:py-12 border-2 border-dashed rounded-lg"
-              style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border-light)', color: 'var(--text-secondary)' }}
-            >
-              <p className="text-sm sm:text-base">
-                No fields added yet. Add your first field below.
-              </p>
-            </div>
-          )}
         </div>
       </SortableContext>
     </DndContext>
   );
-};
+}
