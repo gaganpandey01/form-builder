@@ -1,4 +1,4 @@
-# ignore everything
+# ignore everything comment added
 *
 
 # keep .gitignore itself, package.json and the src folder (and its contents)
